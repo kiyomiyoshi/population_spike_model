@@ -85,7 +85,6 @@ responses_91 <- foreach(
 df_responses_1 <- as.data.frame(rbind(responses_90, responses_91))
 colnames(df_responses_1) <- c("Spikes", "Neuron", "Stimulus", "Trial")
 
-
 ### Unattended ###
 # Parameters (unattended)
 n_neurons <- 360                                               
@@ -147,8 +146,7 @@ responses_91 <- foreach(
 df_responses_2 <- as.data.frame(rbind(responses_90, responses_91))
 colnames(df_responses_2) <- c("Spikes", "Neuron", "Stimulus", "Trial")
 
-
-###
+### Visualization ###
 df_responses_1$Attention <- "attended"
 df_responses_2$Attention <- "unattended"
 df <- rbind(df_responses_1, df_responses_2)
@@ -188,7 +186,7 @@ df %>%
 p3
 
 # sanity check for fano factor 
-fano_summary <- df %>%
+df %>%
   group_by(Attention, Stimulus, Neuron) %>%
   summarise(
     mean_spikes = mean(Spikes),
@@ -201,12 +199,9 @@ fano_summary <- df %>%
   summarise(
     mean_fano = mean(fano, na.rm = TRUE), # average across neurons
     sd_fano   = sd(fano, na.rm = TRUE),   # sd across neurons
-    .groups = "drop"
-  )
+    .groups = "drop")
 
-fano_summary
-
-# decoding with logistic regression
+### Linear Fisher information
 df_wide <- reshape(
   df,
   idvar = c("Trial", "Attention", "Stimulus"),
@@ -217,6 +212,41 @@ df_wide <- reshape(
 colnames(df_wide) <- gsub("Spikes.", "N", colnames(df_wide), fixed = TRUE)
 df_wide$Stimulus_bin <- ifelse(df_wide$Stimulus == 90, 1, 0)
 
+compute_lfi <- function(data, lambda = 1e-6) {
+  
+  neurons <- grep("^N", colnames(data), value = TRUE)
+  
+  data0 <- data[data$Stimulus_bin == 0, neurons]
+  data1 <- data[data$Stimulus_bin == 1, neurons]
+  
+  mu0 <- colMeans(data0)
+  mu1 <- colMeans(data1)
+  
+  df <- mu1 - mu0
+  
+  Sigma0 <- cov(data0)
+  Sigma1 <- cov(data1)
+  Sigma  <- (Sigma0 + Sigma1) / 2
+  
+  p <- length(neurons)              # 逆行列を安定化させる処理 (ニューロン間の相関を少し弱める)
+# Sigma <- Sigma + lambda * diag(p) # Ridge正則化, Tikhonov regularization (小さい固有値を持ち上げる)
+  
+  I <- as.numeric(t(df) %*% solve(Sigma) %*% df) # LFI
+  I_per_neuron <- I / p
+  
+  return(I_per_neuron)
+}
+
+df_att  <-  df_wide[df_wide$Attention == "attended", ]
+df_unatt <- df_wide[df_wide$Attention == "unattended", ]
+
+lfi_att  <- compute_lfi(df_att)
+lfi_unatt <- compute_lfi(df_unatt)
+
+lfi_att
+lfi_unatt
+
+### Decoding with logistic regression ###
 run_logistic_cv_parallel <- function(data, k = 5, ncores = detectCores() - 1) {
   
   predictors <- grep("^N", colnames(data), value = TRUE)

@@ -85,7 +85,6 @@ responses_120 <- foreach(
 df_responses_1 <- as.data.frame(rbind(responses_90, responses_120))
 colnames(df_responses_1) <- c("Spikes", "Neuron", "Stimulus", "Trial")
 
-
 ### Unattended ###
 # Parameters (unattended)
 n_neurons <- 360                                               
@@ -149,8 +148,7 @@ responses_120 <- foreach(
 df_responses_2 <- as.data.frame(rbind(responses_90, responses_120))
 colnames(df_responses_2) <- c("Spikes", "Neuron", "Stimulus", "Trial")
 
-
-###
+### Visualization ###
 df_responses_1$Attention <- "attended"
 df_responses_2$Attention <- "unattended"
 df <- rbind(df_responses_1, df_responses_2)
@@ -190,7 +188,7 @@ df %>%
 p3
 
 # sanity check for fano factor 
-fano_summary <- df %>%
+df %>%
   group_by(Attention, Stimulus, Neuron) %>%
   summarise(
     mean_spikes = mean(Spikes),
@@ -203,7 +201,4 @@ fano_summary <- df %>%
   summarise(
     mean_fano = mean(fano, na.rm = TRUE), # average across neurons
     sd_fano   = sd(fano, na.rm = TRUE),   # sd across neurons
-    .groups = "drop"
-  )
-
-fano_summary
+    .groups = "drop")
