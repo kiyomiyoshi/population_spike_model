@@ -202,19 +202,17 @@ df %>%
     .groups = "drop")
 
 ### Linear Fisher information
-df_wide <- reshape(
-  df,
-  idvar = c("Trial", "Attention", "Stimulus"),
-  timevar = "Neuron",
-  direction = "wide"
-)
+df_wide <- df %>%
+  pivot_wider(
+    id_cols = c(Trial, Attention, Stimulus),
+    names_from = Neuron,
+    values_from = Spikes)
 
-colnames(df_wide) <- gsub("Spikes.", "N", colnames(df_wide), fixed = TRUE)
 df_wide$Stimulus_bin <- ifelse(df_wide$Stimulus == 90, 1, 0)
 
 compute_lfi <- function(data, lambda = 1e-6) {
   
-  neurons <- grep("^N", colnames(data), value = TRUE)
+  neurons <- grep("^[0-9]+$", colnames(data), value = TRUE)  
   
   data0 <- data[data$Stimulus_bin == 0, neurons]
   data1 <- data[data$Stimulus_bin == 1, neurons]
