@@ -6,11 +6,11 @@ cl <- makeCluster(parallel::detectCores() - 1)
 registerDoParallel(cl)
 
 ### Simulation ###
-n_neurons <- 360                                               # Number of neurons in the population
-orientations <- seq(1, 360, by = 1)                            # Possible orientations (0 to 359 degrees)
-preferred_orientations <-  seq(1, 360, length.out = n_neurons) # Preferred orientation of each neuron
-max_firing_seq <- seq(5, 60, by = 5)                           # Maximum firing rate of each neuron
-tuning_width    <- 40                                          # Tuning width (standard deviation) of each neuron's response curve
+n_neurons <- 180                                               # Number of neurons in the population
+orientations <- seq(1, 180, by = 1)                            # Possible orientations (0 to 359 degrees)
+preferred_orientations <-  seq(1, 180, length.out = n_neurons) # Preferred orientation of each neuron
+max_firing_seq <- seq(10, 60, by = 10)                         # Maximum firing rate of each neuron
+tuning_width    <- 20                                          # Tuning width (standard deviation) of each neuron's response curve
 n_trials <- 10000
 
 all_results <- list()
@@ -25,7 +25,7 @@ for (max_firing_rate in max_firing_seq) {
     tuning_curves[i, ] <- max_firing_rate * exp(
       -0.5 * (
         pmin(abs(orientations - preferred_orientations[i]),
-             360 - abs(orientations - preferred_orientations[i]))^2
+             180 - abs(orientations - preferred_orientations[i]))^2
       ) / tuning_width^2
     )
   }
@@ -39,7 +39,7 @@ for (max_firing_rate in max_firing_seq) {
     
     input_90 <- rnorm(n_trials, 90, 0)
     idx <- round(input_90[i]) + 1
-    idx <- pmin(pmax(idx, 1), 360)
+    idx <- pmin(pmax(idx, 1), 180)
     
     mu <- tuning_curves[, idx]
     mu[mu == 0] <- 1e-8
@@ -62,7 +62,7 @@ for (max_firing_rate in max_firing_seq) {
     
     input_91 <- rnorm(n_trials, 91, 0)
     idx <- round(input_91[i]) + 1
-    idx <- pmin(pmax(idx, 1), 360)
+    idx <- pmin(pmax(idx, 1), 180)
     
     mu <- tuning_curves[, idx]
     mu[mu == 0] <- 1e-8
@@ -89,11 +89,6 @@ df %>%
   group_by(Stimulus, MaxFiringRate, Trial) %>%
   summarise(Sum_spikes = sum(Spikes), .groups = "drop") -> df_sum
 
-df_sum %>%
-  group_by(Stimulus, MaxFiringRate) %>%
-  summarise(Mean_sum_spikes = mean(Sum_spikes),
-            SD_sum_spikes = sd(Sum_spikes), .groups = "drop")
-
 g1 <- ggplot(df_sum, aes(x = Sum_spikes, color = MaxFiringRate, fill = MaxFiringRate)) +
   geom_density(alpha = 0.2, linewidth = 1) +
   theme_classic() + facet_wrap(. ~ MaxFiringRate) +
@@ -104,6 +99,39 @@ g1 <- ggplot(df_sum, aes(x = Sum_spikes, color = MaxFiringRate, fill = MaxFiring
     fill =  "Max firing rate")
 g1
 
+df_sum %>%
+  group_by(MaxFiringRate) %>%
+  summarise(Mean_sum_spikes = mean(Sum_spikes),
+            SD_sum_spikes = sd(Sum_spikes), .groups = "drop") -> df_summary
+
+df_summary %>%
+  ggplot(aes(x = MaxFiringRate, y = Mean_sum_spikes)) +
+  geom_point(size = 3) +
+  coord_cartesian(xlim = c(0, 60)) +
+  theme_minimal() -> g2
+g2
+
+df_summary %>%
+  ggplot(aes(x = MaxFiringRate, y = Mean_sum_spikes)) +
+  geom_point(size = 3) +
+  scale_x_log10() +
+  theme_minimal() -> g3
+g3
+
+df_summary %>%
+  ggplot(aes(x = MaxFiringRate, y = SD_sum_spikes)) +
+  geom_point(size = 3) +
+  coord_cartesian(xlim = c(0, 60)) +
+  theme_minimal() -> g4
+g4
+
+df_summary %>%
+  ggplot(aes(x = MaxFiringRate, y = SD_sum_spikes)) +
+  geom_point(size = 3) +
+  scale_x_log10() +
+  theme_minimal() -> g5
+g5
+
 df %>%
   filter(Neuron %in% c(90, 91)) %>%
   pivot_wider(names_from = Neuron, values_from = Spikes) %>%
@@ -112,8 +140,8 @@ df %>%
   labs(x = "Neuron 90", y = "Neuron 91") +
   coord_cartesian(xlim = c(0, 100), ylim = c(0, 100)) +
   theme_minimal() +
-  facet_wrap(. ~ MaxFiringRate) -> g2
-g2
+  facet_wrap(. ~ MaxFiringRate) -> g6
+# g6
 
 # sanity check for fano factor 
 df %>%
@@ -127,6 +155,8 @@ df %>%
   filter(mean_spikes > 0) %>%
   group_by(MaxFiringRate, Stimulus) %>%
   summarise(
+    mean_mean_spikes = mean(mean_spikes, na.rm = TRUE),
+    mean_var_spikes = mean(var_spikes),
     mean_fano = mean(fano, na.rm = TRUE), # average across neurons
     sd_fano   = sd(fano, na.rm = TRUE),   # sd across neurons
     .groups = "drop")
@@ -182,10 +212,17 @@ for (maxFR in maxFR_values) {
 
 print(lfi_results)
 
-### Decoding with logistic regression ###こっから
+lfi_results %>%
+  ggplot(aes(x = MaxFiringRate, y = LFI_per_neuron)) +
+  geom_point(size = 3) +
+  coord_cartesian(xlim = c(0, 60)) +
+  theme_minimal() -> g7
+g7
+ 
+### Decoding with logistic regression ###
 run_logistic_cv_parallel <- function(data, k = 5, ncores = detectCores() - 1) {
   
-  predictors <- grep("^N", colnames(data), value = TRUE)
+  predictors <- grep("^[0-9]+$", colnames(data), value = TRUE)  
   n <- nrow(data)
   
   set.seed(123)
@@ -216,11 +253,35 @@ run_logistic_cv_parallel <- function(data, k = 5, ncores = detectCores() - 1) {
   mean(acc)
 }
 
-df_att   <- subset(df_wide, Attention == "attended")
-df_unatt <- subset(df_wide, Attention == "unattended")
+decoding_results <- data.frame(
+  MaxFiringRate = numeric(),
+  Decoding_accuracy = numeric()
+  )
 
-acc_att   <- run_logistic_cv_parallel(df_att, k = 5, ncores = detectCores() - 1)
-acc_unatt <- run_logistic_cv_parallel(df_unatt, k = 5, ncores = detectCores() - 1)
+for (maxFR in maxFR_values) {
+  df_sub <- df_wide[df_wide$MaxFiringRate == maxFR, ]
+  accuracy <- run_logistic_cv_parallel(df_sub, k = 5, ncores = detectCores() - 1)
+  decoding_results <- rbind(decoding_results,
+                       data.frame(MaxFiringRate = maxFR,
+                                  Decoding_accuracy = accuracy))
+}
 
-acc_att
-acc_unatt
+decoding_results <- mutate(decoding_results, D_prime = qnorm(Decoding_accuracy) - qnorm(1 - Decoding_accuracy))
+decoding_results
+
+decoding_results %>%
+  ggplot(aes(x = MaxFiringRate, y = D_prime)) +
+  geom_point(size = 3) +
+  coord_cartesian(xlim = c(0, 60)) +
+  theme_minimal() -> g8
+g8
+
+decoding_results %>%
+  ggplot(aes(x = MaxFiringRate, y = D_prime)) +
+  geom_point(size = 3) +
+  scale_x_log10() +
+  theme_minimal() -> g9
+g9
+
+g <- cowplot::plot_grid(g8, g9, g2, g3, nrow = 2)
+ggsave("weber_stevens.png", g, width = 4, height = 4, dpi = 300)
