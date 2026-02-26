@@ -113,13 +113,9 @@ df %>%
   group_by(Stimulus, Contrast, Trial) %>%
   summarise(Sum_spikes = sum(Spikes), .groups = "drop") -> df_sum
 
-g3 <- ggplot(df_sum, aes(x = Sum_spikes)) +
+g3 <- ggplot(df_sum, aes(x = Sum_spikes, color = factor(Contrast))) +
   geom_density(alpha = 0.2, linewidth = 1) +
   theme_classic() +
-  facet_wrap(. ~ Contrast, scales = "free") +  # axes scale to "free"
-  scale_x_continuous(
-    breaks = scales::pretty_breaks(n = 3)  # pretty
-  ) +
   labs(
     x = "Sum of spikes",
     y = "Density",
@@ -144,6 +140,7 @@ df_summary %>%
   ggplot(aes(x = Contrast, y = Mean_sum_spikes)) +
   geom_point(size = 2) +
   scale_x_log10() +
+  scale_y_log10() +
   theme_minimal() -> g5
 g5
 

@@ -81,4 +81,4 @@ ggplot(df_liu, aes(x = contrast, y = max_firing)) +
        y = "Max Firing Rate") -> g4
 
 g <- cowplot::plot_grid(g1, g2, g3, g4, nrow = 1)
-ggsave("liu_2015.png", g, width = 8, height = 2, dpi = 300)
+ggsave("contrast_response_functions.png", g, width = 8, height = 2, dpi = 300)
