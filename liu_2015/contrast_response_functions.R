@@ -1,7 +1,7 @@
 library(tidyverse)
 
 df_liu <- data.frame(max_firing = c(20, 30, 42, 51, 60, 70, 71,  73),
-                     contrast   = c( 5, 16, 19, 31, 45, 50, 70, 100))
+                     contrast   = c( 5, 16, 19, 31, 45, 50, 70, 100)) # empirical data
 
 # power
 fit <- nls(max_firing ~ k * contrast^n, data = df_liu, start = list(k = 1, n = 0.5))
@@ -17,6 +17,7 @@ ggplot(df_liu, aes(x = contrast, y = max_firing)) +
   geom_line(data = df_fit, aes(x = contrast, y = max_firing), color = "blue", size = 1) +
   coord_cartesian(xlim = c(0, 100)) +
   theme_minimal() +
+  ylim(0, 80) +
   labs(title = "Stevens power law",
        x = "Contrast",
        y = "Max Firing Rate") -> g1
@@ -37,6 +38,7 @@ ggplot(df_liu, aes(x = contrast, y = max_firing)) +
   geom_line(data = df_fit_log, aes(x = contrast, y = max_firing), color = "green", size = 1) +
   coord_cartesian(xlim = c(0, 100)) +
   theme_minimal() +
+  ylim(0, 80) +
   labs(title = "Log",
        x = "Contrast",
        y = "Max Firing Rate") -> g2
@@ -57,6 +59,7 @@ ggplot(df_liu, aes(x = contrast, y = max_firing)) +
   geom_line(data = df_fit_log_squared, aes(x = contrast, y = max_firing), color = "red", size = 1) +
   coord_cartesian(xlim = c(0, 100)) +
   theme_minimal() +
+  ylim(0, 80) +
   labs(title = "Log squared",
        x = "Contrast",
        y = "Max Firing Rate") -> g3
@@ -76,6 +79,7 @@ ggplot(df_liu, aes(x = contrast, y = max_firing)) +
   geom_line(data = df_fit_naka, aes(x = contrast, y = max_firing), color = "navy", size = 1) +
   coord_cartesian(xlim = c(0, 100)) +
   theme_minimal() +
+  ylim(0, 80) +
   labs(title = "Naka-Rushton",
        x = "Contrast",
        y = "Max Firing Rate") -> g4

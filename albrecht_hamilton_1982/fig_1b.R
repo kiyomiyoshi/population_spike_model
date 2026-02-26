@@ -5,7 +5,7 @@ library(doParallel)
 library(foreach)
 
 Contrast <- c(2, 4, 8, 16, 24, 40, 56, 80, 96)
-Rmax <- 115# fixed at 115 for comparability
+Rmax <- 115 # fixed at 115 for comparability
 C50 <- 10.5
 n   <-  1.7
 
@@ -119,8 +119,8 @@ g3 <- ggplot(df_sum, aes(x = Sum_spikes, color = factor(Contrast))) +
   labs(
     x = "Sum of spikes",
     y = "Density",
-    color = "Max firing rate",
-    fill =  "Max firing rate"
+    color = "Contrast",
+    fill =  "Contrast"
   )
 g3
 

@@ -172,7 +172,8 @@ g6 <- df_summary %>%
   geom_point(size = 2) +
   scale_x_log10() +
   scale_y_log10() +
-  theme_minimal()
+  theme_minimal() +
+  ylab("Mean_sum_spikes")
 
 top    <- plot_grid(g3, ncol = 1)
 middle <- plot_grid(g1, g6, ncol = 2)

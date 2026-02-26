@@ -119,8 +119,8 @@ g3 <- ggplot(df_sum, aes(x = Sum_spikes, color = factor(Contrast))) +
   labs(
     x = "Sum of spikes",
     y = "Density",
-    color = "Max firing rate",
-    fill =  "Max firing rate"
+    color = "Contrast",
+    fill =  "Contrast"
   )
 g3
 

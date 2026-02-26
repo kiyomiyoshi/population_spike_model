@@ -4,7 +4,7 @@ library(tidyverse)
 library(doParallel)
 library(foreach)
 
-Contrast <- c(2, 4, 8, 16, 24, 40, 56, 80, 96)
+Contrast <- c(2, 12, 22, 32, 42, 52, 62, 72)
 a <- 2.2766
 b <- 1.2853
 
@@ -118,8 +118,8 @@ g3 <- ggplot(df_sum, aes(x = Sum_spikes, color = factor(Contrast))) +
   labs(
     x = "Sum of spikes",
     y = "Density",
-    color = "Max firing rate",
-    fill =  "Max firing rate"
+    color = "Contrast",
+    fill =  "Contrast"
   )
 g3
 
