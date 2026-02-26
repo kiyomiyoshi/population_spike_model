@@ -37,9 +37,29 @@ ggplot(df_liu, aes(x = contrast, y = max_firing)) +
   geom_line(data = df_fit_log, aes(x = contrast, y = max_firing), color = "green", size = 1) +
   coord_cartesian(xlim = c(0, 100)) +
   theme_minimal() +
-  labs(title = "Log function",
+  labs(title = "Log",
        x = "Contrast",
        y = "Max Firing Rate") -> g2
+
+# log squared
+fit_log_squared <- nls(max_firing ~ a * (log(contrast) + b)^2,
+               data = df_liu,
+               start = list(a = 0.2, b = 0))
+summary(fit_log_squared)
+
+x_new <- seq(1, 100, length.out = 200)
+params_log <- coef(fit_log_squared)
+y_new <- params_log["a"] * (log(x_new) + params_log["b"])^2 
+df_fit_log_squared <- data.frame(contrast = x_new, max_firing = y_new)
+
+ggplot(df_liu, aes(x = contrast, y = max_firing)) +
+  geom_point(size = 3) +
+  geom_line(data = df_fit_log_squared, aes(x = contrast, y = max_firing), color = "red", size = 1) +
+  coord_cartesian(xlim = c(0, 100)) +
+  theme_minimal() +
+  labs(title = "Log squared",
+       x = "Contrast",
+       y = "Max Firing Rate") -> g3
 
 # Naka-Rushton function
 fit_naka <- nls(max_firing ~ Rmax * contrast^n / (contrast^n + C50^n),
@@ -58,7 +78,7 @@ ggplot(df_liu, aes(x = contrast, y = max_firing)) +
   theme_minimal() +
   labs(title = "Naka-Rushton",
        x = "Contrast",
-       y = "Max Firing Rate") -> g3
+       y = "Max Firing Rate") -> g4
 
-g <- cowplot::plot_grid(g1, g2, g3, nrow = 1)
-ggsave("liu_2015.png", g, width = 6, height = 2, dpi = 300)
+g <- cowplot::plot_grid(g1, g2, g3, g4, nrow = 1)
+ggsave("liu_2015.png", g, width = 8, height = 2, dpi = 300)
