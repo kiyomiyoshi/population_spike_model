@@ -760,7 +760,7 @@ l10 <- ggplot(subset(df_sum, df_sum$Contrast == 1 | df_sum$Contrast == 4),
 l10
 
 l11 <- df_sum %>%
-  dplyr::filter(Contrast == 1 & Contrast == 4) %>%
+  dplyr::filter(Contrast == 1 | Contrast == 4) %>%
   mutate(Yes = Sum_spikes > criterion) %>%
   group_by(Contrast) %>%
   summarise(P_yes = mean(Yes)) %>%
