@@ -1,5 +1,4 @@
-# Simulation assuming Naka-Rushton function on Liu et al. (2015, fig. 1A)
-
+# Simulation assuming Naka-Rushton function on Albrecht & Hamilton (1982, Fig. 4)
 library(tidyverse)
 library(doParallel)
 library(foreach)

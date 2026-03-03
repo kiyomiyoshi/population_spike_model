@@ -3,6 +3,9 @@
 library(tidyverse)
 library(doParallel)
 library(foreach)
+library(tictoc)
+
+tic()
 
 Contrast <- c(2, 4, 8, 16, 24, 40, 56, 80, 96)
 Rmax <- 115 # fixed at 115 for comparability
@@ -313,3 +316,5 @@ g11
 
 g <- cowplot::plot_grid(g1, g2, g10, g11, g4, g5, nrow = 3)
 ggsave("fig_1a.png", g, width = 4, height = 5.6, dpi = 300)
+
+toc()
