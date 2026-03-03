@@ -124,7 +124,7 @@ responses_90 <- foreach(
   idx <- round(input_90[i]) + 1
   mu <- tuning_curves[, idx]
   mu[mu == 0] <- 1e-8
-  size <- 5 * mu # Fano factor = 1.2
+  size <- 5 * mu # Fano factor = 1.2 (var = μ + μ^2/size)
   resp <- rnbinom(n_neurons, size = size, mu = mu)
   cbind(resp, neuron = seq_len(n_neurons), stim = 90, trial = i)
 }

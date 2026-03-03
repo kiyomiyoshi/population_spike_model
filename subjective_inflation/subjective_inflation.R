@@ -6,8 +6,8 @@ library(foreach)
 library(cowplot)
 
 
-#################### High Alpha ####################
-Contrast <- c(0.5, 1, 5, seq(10, 100, 15))
+#################### High Attention ####################
+Contrast <- c(0.5, 1, 4, seq(10, 100, 15))
 Rmax <- 115
 C50 <- 19.3
 n   <-  2.9
@@ -113,9 +113,9 @@ for (max_firing_rate in max_firing_seq) {
 
 df <- do.call(rbind, all_results)
 df$Contrast <- contrast[match(df$Contrast, max_firing_seq)]
-# write.csv(df, 
-#           file = "high_alpha.csv", 
-#           row.names = FALSE)
+write.csv(df, 
+        file = "high_attention.csv", 
+        row.names = FALSE)
 
 
 ### Sanity check for fano factor ### 
@@ -159,7 +159,7 @@ h3 <- ggplot(df_sum, aes(x = Sum_spikes, color = factor(Contrast))) +
     legend.title = element_text(size = 8)
   ) +
   coord_cartesian(xlim = c(0, 10000), ylim = c(0, 0.03)) +
-  ggtitle("High alpha (mean spontaneous firing = 3.45)") +
+  ggtitle("High attention (Fano factor = 1.0)") +
   theme(plot.title = element_text(size = 12, face = "bold", hjust = 0.5))
 h3
 
@@ -196,7 +196,7 @@ h4 <- ggplot(df_plot, aes(x = Contrast, y = DeltaC_pred)) +
   geom_point() +
   theme_classic() +
   scale_x_log10() +
-  scale_y_log10(limits = c(0.2, 30)) +
+  scale_y_log10(limits = c(0.2, 35)) +
   ylab("ΔC (JND of d' = 1)") +
   xlab("Contrast")
 
@@ -348,13 +348,58 @@ decoding_results %>%
 h9
 
 
+### Subjective inflation ###
+df_sum %>%
+  dplyr::filter(Contrast == 1 | Contrast == 4) %>%
+  summarise(Criterion = mean(Sum_spikes)) %>%
+  as.numeric() -> criterion
 
-#################### Low Alpha ####################
-Contrast <- c(0.5, 1, 5, seq(10, 100, 15))
+h10 <- ggplot(subset(df_sum, df_sum$Contrast == 1 | df_sum$Contrast == 4), 
+            aes(x = Sum_spikes, color = factor(Contrast))) +
+  geom_vline(xintercept = criterion, linetype = "dashed") +
+  geom_density(alpha = 0.2, linewidth = 1) +
+  theme_classic() +
+  labs(
+    x = "Sum of spikes",
+    y = "Density",
+    color = "Contrast",
+    fill =  "Contrast"
+  ) + 
+  theme(
+    legend.position = c(0.98, 1.05),
+    legend.justification = c(1, 1),
+    legend.key.size = unit(0.25, "cm"),
+    legend.text = element_text(size = 6),
+    legend.title = element_text(size = 8)
+  ) +
+  coord_cartesian(xlim = c(500, 800), ylim = c(0, 0.02))
+h10
+  
+h11 <- df_sum %>%
+  dplyr::filter(Contrast == 1 | Contrast == 4) %>%
+  mutate(Yes = Sum_spikes > criterion) %>%
+  group_by(Contrast) %>%
+  summarise(P_yes = mean(Yes)) %>%
+  ggplot(aes(x = Contrast, y = P_yes, color = factor(Contrast))) +
+  geom_point(size = 3) +
+  ylim(0, 1) +
+  theme_classic() +
+  labs(
+    x = "Contrast",
+    y = "P(Yes)",
+    color = "Contrast"
+  ) + 
+  theme(legend.position = "None")
+h11
+
+
+
+#################### Low Attention ####################
+Contrast <- c(0.5, 1, 4, seq(10, 100, 15))
 Rmax <- 115
 C50 <- 19.3
 n   <-  2.9
-R0 <- Rmax * 0.06
+R0 <- Rmax * 0.03
 
 Max_firing <- Rmax * Contrast^n / (Contrast^n + C50^n)
 df_ah <- data.frame(Contrast, Max_firing)
@@ -416,8 +461,8 @@ for (max_firing_rate in max_firing_seq) {
     
     mu <- tuning_curves[, idx]
     mu[mu == 0] <- 1e-8
-    
-    resp <- rnbinom(n_neurons, size = 1000000, mu = mu) + rnbinom(n_neurons, size = 1000000, mu = R0)
+   
+    resp <- rnbinom(n_neurons, size = 5 * mu, mu = mu) + rnbinom(n_neurons, size = 5 * R0, mu = R0) # Fano factor = 1.2 (var = μ + μ^2/size)1000000
     
     cbind(resp,
           neuron = seq_len(n_neurons),
@@ -440,7 +485,7 @@ for (max_firing_rate in max_firing_seq) {
     mu <- tuning_curves[, idx]
     mu[mu == 0] <- 1e-8
     
-    resp <- rnbinom(n_neurons, size = 1000000, mu = mu) + rnbinom(n_neurons, size = 1000000, mu = R0)
+    resp <- rnbinom(n_neurons, size = 5 * mu, mu = mu) + rnbinom(n_neurons, size = 5 * R0, mu = R0)
     
     cbind(resp,
           neuron = seq_len(n_neurons),
@@ -458,7 +503,7 @@ for (max_firing_rate in max_firing_seq) {
 df <- do.call(rbind, all_results)
 df$Contrast <- contrast[match(df$Contrast, max_firing_seq)]
 # write.csv(df, 
-#           file = "low_alpha.csv", 
+#           file = "low_attention.csv", 
 #           row.names = FALSE)
 
 
@@ -503,7 +548,7 @@ l3 <- ggplot(df_sum, aes(x = Sum_spikes, color = factor(Contrast))) +
     legend.title = element_text(size = 8)
   ) +
   coord_cartesian(xlim = c(0, 10000), ylim = c(0, 0.03)) +
-  ggtitle("Low alpha (mean spontaneous firing = 6.90)") +
+  ggtitle("Low attention (Fano factor = 1.2)") +
   theme(plot.title = element_text(size = 12, face = "bold", hjust = 0.5))
 l3
 
@@ -540,7 +585,7 @@ l4 <- ggplot(df_plot, aes(x = Contrast, y = DeltaC_pred)) +
   geom_point() +
   theme_classic() +
   scale_x_log10() +
-  scale_y_log10(limits = c(0.2, 30)) +
+  scale_y_log10(limits = c(0.2, 35)) +
   ylab("ΔC (JND of d' = 1)") +
   xlab("Contrast")
 
@@ -555,8 +600,8 @@ l5 <- ggplot(df_plot, aes(x = Contrast, y = Weber_ratio_pred)) +
 l6 <- df_summary %>%
   ggplot(aes(x = Contrast, y = mu)) +
   geom_point(size = 2) +
-# scale_x_log10() +
-# scale_y_log10() +
+  # scale_x_log10() +
+  # scale_y_log10() +
   coord_cartesian(ylim = c(0, 10000)) +
   theme_minimal() +
   ylab("Mean total spikes")
@@ -692,18 +737,58 @@ decoding_results %>%
   theme_minimal() -> l9
 l9
 
+### Subjective inflation ###
+l10 <- ggplot(subset(df_sum, df_sum$Contrast == 1 | df_sum$Contrast == 4), 
+              aes(x = Sum_spikes, color = factor(Contrast))) +
+  geom_vline(xintercept = criterion, linetype = "dashed") +
+  geom_density(alpha = 0.2, linewidth = 1) +
+  theme_classic() +
+  labs(
+    x = "Sum of spikes",
+    y = "Density",
+    color = "Contrast",
+    fill =  "Contrast"
+  ) + 
+  theme(
+    legend.position = c(0.98, 1.05),
+    legend.justification = c(1, 1),
+    legend.key.size = unit(0.25, "cm"),
+    legend.text = element_text(size = 6),
+    legend.title = element_text(size = 8)
+  ) +
+  coord_cartesian(xlim = c(500, 800), ylim = c(0, 0.02))
+l10
+
+l11 <- df_sum %>%
+  dplyr::filter(Contrast == 1 & Contrast == 4) %>%
+  mutate(Yes = Sum_spikes > criterion) %>%
+  group_by(Contrast) %>%
+  summarise(P_yes = mean(Yes)) %>%
+  ggplot(aes(x = Contrast, y = P_yes, color = factor(Contrast))) +
+  geom_point(size = 3) +
+  ylim(0, 1) +
+  theme_classic() +
+  labs(
+    x = "Contrast",
+    y = "P(Yes)",
+    color = "Contrast"
+  ) + 
+  theme(legend.position = "None")
+l11
 
 ### Figures ###
 p1 <- plot_grid(h3, ncol = 1)
 p2 <- plot_grid(h1, h6, ncol = 2)
 p3 <- plot_grid(h4, h5, ncol = 2)
 p4 <- plot_grid(h7, h9, ncol = 2)
-high_alpha <- plot_grid(p1, p2, p3, p4, ncol = 1, rel_heights = c(1, 1))
+p5 <- plot_grid(h10, h11, ncol = 2)
+high_alpha <- plot_grid(p1, p2, p3, p4, p5, ncol = 1, rel_heights = c(1, 1))
 
 p1 <- plot_grid(l3, ncol = 1)
 p2 <- plot_grid(l1, l6, ncol = 2)
 p3 <- plot_grid(l4, l5, ncol = 2)
 p4 <- plot_grid(l7, l9, ncol = 2)
-low_alpha <- plot_grid(p1, p2, p3, p4, ncol = 1, rel_heights = c(1, 1))
-samaha_effect <- plot_grid(low_alpha, high_alpha, ncol = 2)
-ggsave("samaha_effect.png", samaha_effect, width = 12, height = 9, dpi = 300)
+p5 <- plot_grid(l10, l11, ncol = 2)
+low_alpha <- plot_grid(p1, p2, p3, p4, p5, ncol = 1, rel_heights = c(1, 1))
+subjective_inflation <- plot_grid(low_alpha, high_alpha, ncol = 2)
+ggsave("subjective_inflation.png", subjective_inflation, width = 12, height = 11.25, dpi = 300)

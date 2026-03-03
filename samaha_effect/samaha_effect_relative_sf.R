@@ -6,12 +6,12 @@ library(foreach)
 library(cowplot)
 
 
-########## High Alpha ##########
+#################### High Alpha ####################
 Contrast <- c(0.5, 1, 5, seq(10, 100, 15))
 Rmax <- 115
 C50 <- 19.3
 n   <-  2.9
-R0 <- Rmax * 0.03 # spontaneous firing based on Geisler & Albrecht (1997)
+sf_rate <- 0.03 # spontaneous firing rate based on Geisler & Albrecht (1997)
 
 Max_firing <- Rmax * Contrast^n / (Contrast^n + C50^n)
 df_ah <- data.frame(Contrast, Max_firing)
@@ -72,7 +72,8 @@ for (max_firing_rate in max_firing_seq) {
     
     mu <- tuning_curves[, idx]
     mu[mu == 0] <- 1e-8
-    
+    R0 <- mu * sf_rate
+      
     resp <- rnbinom(n_neurons, size = 1000000, mu = mu) + rnbinom(n_neurons, size = 1000000, mu = R0)
     
     cbind(resp,
@@ -95,6 +96,7 @@ for (max_firing_rate in max_firing_seq) {
     
     mu <- tuning_curves[, idx]
     mu[mu == 0] <- 1e-8
+    R0 <- mu * sf_rate
     
     resp <- rnbinom(n_neurons, size = 1000000, mu = mu) + rnbinom(n_neurons, size = 1000000, mu = R0)
     
@@ -158,8 +160,8 @@ h3 <- ggplot(df_sum, aes(x = Sum_spikes, color = factor(Contrast))) +
     legend.text = element_text(size = 6),
     legend.title = element_text(size = 8)
   ) +
-  coord_cartesian(xlim = c(0, 10000), ylim = c(0, 0.03)) +
-  ggtitle("High alpha (mean spontaneous firing = 3.45)") +
+  coord_cartesian(xlim = c(0, 10000), ylim = c(0, 0.3)) +
+  ggtitle("High alpha (spontaneous firing = tuning peak x 0.03)") +
   theme(plot.title = element_text(size = 12, face = "bold", hjust = 0.5))
 h3
 
@@ -196,7 +198,7 @@ h4 <- ggplot(df_plot, aes(x = Contrast, y = DeltaC_pred)) +
   geom_point() +
   theme_classic() +
   scale_x_log10() +
-  scale_y_log10(limits = c(0.2, 30)) +
+  scale_y_log10(limits = c(0.01, 30)) +
   ylab("ΔC (JND of d' = 1)") +
   xlab("Contrast")
 
@@ -204,7 +206,7 @@ h5 <- ggplot(df_plot, aes(x = Contrast, y = Weber_ratio_pred)) +
   geom_line() +
   geom_point() +
   theme_classic() +
-  coord_cartesian(ylim = c(0, 3)) +
+  coord_cartesian(ylim = c(0, 0.5)) +
   ylab("ΔC/C (Weber fraction)") +
   xlab("Contrast")
 
@@ -272,7 +274,7 @@ print(lfi_results)
 lfi_results %>%
   ggplot(aes(x = Contrast, y = LFI_per_neuron)) +
   geom_point(size = 2) +
-  coord_cartesian(xlim = c(0, 100), ylim = c(0, 0.07)) +
+  coord_cartesian(xlim = c(0, 100), ylim = c(0, 0.09)) +
   ylab("LFI per neuron") +
   theme_minimal() -> h7
 h7
@@ -334,7 +336,7 @@ decoding_results %>%
   geom_point(size = 2) +
   coord_cartesian(xlim = c(0, 100)) +
   ylab("d' for orientation") +
-  coord_cartesian(xlim = c(0, 3.5)) +
+  coord_cartesian(xlim = c(0, 4)) +
   theme_minimal() -> h8
 h8
 
@@ -343,16 +345,18 @@ decoding_results %>%
   geom_point(size = 2) +
   scale_x_log10() +
   ylab("d' for orientation") +
-  coord_cartesian(ylim = c(0, 3.5)) +
+  coord_cartesian(ylim = c(0, 4)) +
   theme_minimal() -> h9
 h9
 
-########## Low Alpha ##########
+
+
+#################### Low Alpha ####################
 Contrast <- c(0.5, 1, 5, seq(10, 100, 15))
 Rmax <- 115
 C50 <- 19.3
 n   <-  2.9
-R0 <- Rmax * 0.06
+sf_rate <- 0.15
 
 Max_firing <- Rmax * Contrast^n / (Contrast^n + C50^n)
 df_ah <- data.frame(Contrast, Max_firing)
@@ -376,12 +380,12 @@ l2
 cl <- makeCluster(parallel::detectCores() - 1)
 registerDoParallel(cl)
 
-n_neurons <- 180                                               # Number of neurons in the population
-orientations <- seq(1, 180, by = 1)                            # Possible orientations (0 to 359 degrees)
-preferred_orientations <-  seq(1, 180, length.out = n_neurons) # Preferred orientation of each neuron
-max_firing_seq <- df_ah$Max_firing                             # Maximum firing rate of each neuron
-contrast <-       df_ah$Contrast
-tuning_width    <- 20                                          # Tuning width (standard deviation) of each neuron's response curve
+n_neurons <- 180                                              # Number of neurons in the population
+orientations <- seq(1, 180, by = 1)                           # Possible orientations (0 to 359 degrees)
+preferred_orientations <- seq(1, 180, length.out = n_neurons) # Preferred orientation of each neuron
+max_firing_seq <- df_ah$Max_firing                            # Maximum firing rate of each neuron
+contrast <- df_ah$Contrast
+tuning_width <- 20                                            # Tuning width (standard deviation) of each neuron's response curve
 n_trials <- 10000
 
 all_results <- list()
@@ -414,6 +418,7 @@ for (max_firing_rate in max_firing_seq) {
     
     mu <- tuning_curves[, idx]
     mu[mu == 0] <- 1e-8
+    R0 <- mu * sf_rate
     
     resp <- rnbinom(n_neurons, size = 1000000, mu = mu) + rnbinom(n_neurons, size = 1000000, mu = R0)
     
@@ -437,6 +442,7 @@ for (max_firing_rate in max_firing_seq) {
     
     mu <- tuning_curves[, idx]
     mu[mu == 0] <- 1e-8
+    R0 <- mu * sf_rate
     
     resp <- rnbinom(n_neurons, size = 1000000, mu = mu) + rnbinom(n_neurons, size = 1000000, mu = R0)
     
@@ -500,8 +506,8 @@ l3 <- ggplot(df_sum, aes(x = Sum_spikes, color = factor(Contrast))) +
     legend.text = element_text(size = 6),
     legend.title = element_text(size = 8)
   ) +
-  coord_cartesian(xlim = c(0, 10000), ylim = c(0, 0.03)) +
-  ggtitle("Low alpha (mean spontaneous firing = 6.90)") +
+  coord_cartesian(xlim = c(0, 10000), ylim = c(0, 0.3)) +
+  ggtitle("Low alpha (spontaneous firing = tuning peak x 0.06)") +
   theme(plot.title = element_text(size = 12, face = "bold", hjust = 0.5))
 l3
 
@@ -538,7 +544,7 @@ l4 <- ggplot(df_plot, aes(x = Contrast, y = DeltaC_pred)) +
   geom_point() +
   theme_classic() +
   scale_x_log10() +
-  scale_y_log10(limits = c(0.2, 30)) +
+  scale_y_log10(limits = c(0.01, 30)) +
   ylab("ΔC (JND of d' = 1)") +
   xlab("Contrast")
 
@@ -546,7 +552,7 @@ l5 <- ggplot(df_plot, aes(x = Contrast, y = Weber_ratio_pred)) +
   geom_line() +
   geom_point() +
   theme_classic() +
-  coord_cartesian(ylim = c(0, 3)) +
+  coord_cartesian(ylim = c(0, 0.5)) +
   ylab("ΔC/C (Weber fraction)") +
   xlab("Contrast")
 
@@ -615,7 +621,7 @@ print(lfi_results)
 lfi_results %>%
   ggplot(aes(x = Contrast, y = LFI_per_neuron)) +
   geom_point(size = 2) +
-  coord_cartesian(xlim = c(0, 100), ylim = c(0, 0.07)) +
+  coord_cartesian(xlim = c(0, 100), ylim = c(0, 0.09)) +
   ylab("LFI per neuron") +
   theme_minimal() -> l7
 l7
@@ -677,7 +683,7 @@ decoding_results %>%
   geom_point(size = 2) +
   coord_cartesian(xlim = c(0, 100)) +
   ylab("d' for orientation") +
-  coord_cartesian(xlim = c(0, 3.5)) +
+  coord_cartesian(xlim = c(0, 4)) +
   theme_minimal() -> l8
 l8
 
@@ -686,7 +692,7 @@ decoding_results %>%
   geom_point(size = 2) +
   scale_x_log10() +
   ylab("d' for orientation") +
-  coord_cartesian(ylim = c(0, 3.5)) +
+  coord_cartesian(ylim = c(0, 4)) +
   theme_minimal() -> l9
 l9
 
@@ -704,4 +710,4 @@ p3 <- plot_grid(l4, l5, ncol = 2)
 p4 <- plot_grid(l7, l9, ncol = 2)
 low_alpha <- plot_grid(p1, p2, p3, p4, ncol = 1, rel_heights = c(1, 1))
 samaha_effect <- plot_grid(low_alpha, high_alpha, ncol = 2)
-ggsave("samaha_effect.png", samaha_effect, width = 12, height = 9, dpi = 300)
+ggsave("samaha_effect_relative_sf.png", samaha_effect, width = 12, height = 9, dpi = 300)
