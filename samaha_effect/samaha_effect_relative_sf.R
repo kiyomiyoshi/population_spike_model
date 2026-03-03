@@ -507,7 +507,7 @@ l3 <- ggplot(df_sum, aes(x = Sum_spikes, color = factor(Contrast))) +
     legend.title = element_text(size = 8)
   ) +
   coord_cartesian(xlim = c(0, 10000), ylim = c(0, 0.3)) +
-  ggtitle("Low alpha (spontaneous firing = tuning peak x 0.06)") +
+  ggtitle("Low alpha (spontaneous firing = tuning peak x 0.15)") +
   theme(plot.title = element_text(size = 12, face = "bold", hjust = 0.5))
 l3
 
