@@ -463,7 +463,7 @@ first_two_colors <- default_colors[1:2]
 df_sub <- subset(df_sum, Contrast %in% c(1, 4) & Attention == "high")
 df_sub$Contrast <- factor(df_sub$Contrast, levels = c(1, 4))
 
-g_inset <- ggplot(df_sub, aes(x = Sum_spikes, color = factor(Contrast))) +
+g_inset_high <- ggplot(df_sub, aes(x = Sum_spikes, color = factor(Contrast))) +
   geom_vline(xintercept = criterion, linetype = "dashed", linewidth = 0.3) +
   geom_density(alpha = 0.85, linewidth = 0.7) +
   scale_x_continuous(limits = c(500, 800), breaks = c(500, 800)) +
@@ -497,7 +497,7 @@ g3 <- ggplot(df_sum_high, aes(x = Sum_spikes, color = factor(Contrast))) +
   theme(plot.title = element_text(size = 8.5, face = "bold", hjust = 0.5))
 
 g3 <- g3 + annotation_custom(
-  grob = ggplotGrob(g_inset),
+  grob = ggplotGrob(g_inset_high),
   xmin = 2000, xmax = 8000,
   ymin = 0.01, ymax = 0.03
 )
@@ -505,7 +505,7 @@ g3 <- g3 + annotation_custom(
 df_sub <- subset(df_sum, Contrast %in% c(1, 4) & Attention == "low")
 df_sub$Contrast <- factor(df_sub$Contrast, levels = c(1, 4))
 
-g_inset <- ggplot(df_sub, aes(x = Sum_spikes, color = factor(Contrast))) +
+g_inset_low <- ggplot(df_sub, aes(x = Sum_spikes, color = factor(Contrast))) +
   geom_vline(xintercept = criterion, linetype = "dashed", linewidth = 0.3) +
   geom_density(alpha = 0.85, linewidth = 0.7) +
   scale_x_continuous(limits = c(500, 800), breaks = c(500, 800)) +
@@ -539,7 +539,7 @@ g4 <- ggplot(df_sum_low, aes(x = Sum_spikes, color = factor(Contrast))) +
   theme(plot.title = element_text(size = 8.5, face = "bold", hjust = 0.5))
 
 g4 <- g4 + annotation_custom(
-  grob = ggplotGrob(g_inset),
+  grob = ggplotGrob(g_inset_low),
   xmin = 2000, xmax = 8000,
   ymin = 0.01, ymax = 0.03
 )
@@ -680,28 +680,7 @@ g10 <- decoding_results %>%
     legend.key = element_blank()
   )
 
-g11 <- ggplot(subset(df_sum, df_sum$Contrast == 1 | df_sum$Contrast == 4), 
-              aes(x = Sum_spikes, color = factor(Contrast))) +
-  geom_vline(xintercept = criterion, linetype = "dashed") +
-  geom_density(alpha = 0.85, linewidth = 1) +
-  coord_cartesian(xlim = c(500, 800)) +
-  scale_y_continuous(limits = c(0, 0.02), breaks = c(0, 0.01, 0.02)) + 
-  theme_classic(base_size = 11) +
-  labs(
-    x = "Total spikes",
-    y = "Density",
-    color = "Contrast"
-  ) + 
-  theme(
-    legend.position = c(1, 0.95),
-    legend.justification = c(1, 1),
-    legend.key = element_blank()
-  ) +
-  facet_wrap(.~ Attention, nrow = 2) +
-  scale_color_manual(values = first_two_colors)
-g11
-
-g12 <- df_sum %>%
+g11 <- df_sum %>%
   dplyr::filter(Contrast == 1 | Contrast == 4) %>%
   mutate(Yes = Sum_spikes > criterion) %>%
   group_by(Contrast, Attention) %>%
@@ -716,15 +695,14 @@ g12 <- df_sum %>%
   labs(
     x = "Contrast (%)",
     y = "P(Yes)",
-    color = "Contrast",
-    shape = "Attention"
+    color = "Contrast"
   ) +
   theme(
     legend.position = c(0.4, 1),
     legend.justification = c(1, 1)
   )
 
-plot_list <- list(g4, g3, g12, g7, g6, g10)
+plot_list <- list(g4, g3, g11, g7, g6, g10)
 plots_no_legend <- lapply(plot_list, function(p) {
   p + theme(
     legend.position = "none",

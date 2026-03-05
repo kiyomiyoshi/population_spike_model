@@ -236,7 +236,7 @@ Contrast <- c(1, 4, seq(10, 100, 15))
 Rmax <- 115
 C50 <- 19.3
 n   <-  2.9
-R0 <- Rmax * 0.045
+R0 <- Rmax * 0.04
 
 Max_firing <- Rmax * Contrast^n / (Contrast^n + C50^n)
 df <- data.frame(Contrast, Max_firing)
@@ -449,6 +449,33 @@ g2 <- ggplot(df, aes(x = Contrast, y = Max_firing)) +
   ) +
   theme_classic(base_size = 11)
 
+df_sum_high$Alpha <- "high"
+df_sum_low$Alpha  <- "low"
+df_sum <- rbind(df_sum_high, df_sum_low)
+df_sum %>%
+  dplyr::filter(Contrast == 55 | Contrast == 70) %>%
+  summarise(Criterion = mean(Sum_spikes)) %>%
+  as.numeric() -> criterion
+
+default_colors <- scales::hue_pal()(9)
+first_two_colors <- default_colors[1:2]
+
+df_sub <- subset(df_sum, Contrast %in% c(55, 70) & Alpha == "high")
+df_sub$Contrast <- factor(df_sub$Contrast, levels = c(55, 70))
+
+g_inset_high <- ggplot(df_sub, aes(x = Sum_spikes, color = factor(Contrast))) +
+  geom_vline(xintercept = criterion, linetype = "dashed", linewidth = 0.3) +
+  geom_density(alpha = 0.85, linewidth = 0.7) +
+  scale_x_continuous(limits = c(5800, 6800), breaks = c(5800, 6800)) +
+  scale_y_continuous(limits = c(0, 0.02), breaks = c(0, 0.01, 0.02)) + 
+  theme_minimal(base_size = 11) +
+  theme(
+    legend.position = "none",
+    axis.title = element_blank(),
+    axis.text = element_text(size = 6)
+  ) +
+  scale_color_manual(values = first_two_colors)
+
 g3 <- ggplot(df_sum_high, aes(x = Sum_spikes, color = factor(Contrast))) +
   geom_density(alpha = 0.85, linewidth = 1) +
   coord_cartesian(xlim = c(0, 7500), ylim = c(0.0015, 0.03)) +
@@ -457,7 +484,7 @@ g3 <- ggplot(df_sum_high, aes(x = Sum_spikes, color = factor(Contrast))) +
   labs(
     x = "Total spikes",
     y = "Density",
-    color = "Contrast",
+    color = "Contrast"
   ) + 
   theme(
     legend.position = c(1.07, 1.05),
@@ -468,6 +495,28 @@ g3 <- ggplot(df_sum_high, aes(x = Sum_spikes, color = factor(Contrast))) +
   ) +
   ggtitle("High alpha:\nspontaneous firing = 3.45") +
   theme(plot.title = element_text(size = 8.5, face = "bold", hjust = 0.5))
+
+g3 <- g3 + annotation_custom(
+  grob = ggplotGrob(g_inset_high),
+  xmin = 2000, xmax = 8000,
+  ymin = 0.01, ymax = 0.03
+)
+
+df_sub <- subset(df_sum, Contrast %in% c(55, 70) & Alpha == "low")
+df_sub$Contrast <- factor(df_sub$Contrast, levels = c(55, 70))
+
+g_inset_low <- ggplot(df_sub, aes(x = Sum_spikes, color = factor(Contrast))) +
+  geom_vline(xintercept = criterion, linetype = "dashed", linewidth = 0.3) +
+  geom_density(alpha = 0.85, linewidth = 0.7) +
+  scale_x_continuous(limits = c(5800, 6800), breaks = c(5800, 6800)) +
+  scale_y_continuous(limits = c(0, 0.02), breaks = c(0, 0.01, 0.02)) + 
+  theme_minimal(base_size = 11) +
+  theme(
+    legend.position = "none",
+    axis.title = element_blank(),
+    axis.text = element_text(size = 6)
+  ) +
+  scale_color_manual(values = first_two_colors)
 
 g4 <- ggplot(df_sum_low, aes(x = Sum_spikes, color = factor(Contrast))) +
   geom_density(alpha = 0.85, linewidth = 1) +
@@ -488,6 +537,12 @@ g4 <- ggplot(df_sum_low, aes(x = Sum_spikes, color = factor(Contrast))) +
   ) +
   ggtitle("Low alpha:\nspontaneous firing = 5.18") +
   theme(plot.title = element_text(size = 8.5, face = "bold", hjust = 0.5))
+
+g4 <- g4 + annotation_custom(
+  grob = ggplotGrob(g_inset_low),
+  xmin = 2000, xmax = 8000,
+  ymin = 0.01, ymax = 0.03
+)
 
 df_summary_high$Alpha <- "high"
 df_summary_low$Alpha  <- "low"
@@ -625,7 +680,29 @@ g10 <- decoding_results %>%
     legend.key = element_blank()
   )
 
-plot_list <- list(g4, g3, g7, g5, g6, g10)
+g11 <- df_sum %>%
+  dplyr::filter(Contrast == 1 | Contrast == 4) %>%
+  mutate(Yes = Sum_spikes > criterion) %>%
+  group_by(Contrast, Alpha) %>%
+  summarise(P_yes = mean(Yes)) %>%
+  ggplot(aes(x = Contrast, y = P_yes, color = Alpha)) +
+  geom_point(size = 2.2, alpha = 0.85) +
+  geom_line(alpha = 0.85, linewidth = 1) +
+  scale_x_continuous(limits = c(1, 4), breaks = c(1, 4)) + 
+  scale_y_continuous(limits = c(0, 1), breaks = c(0, 0.25, 0.5, 0.75, 1)) + 
+  scale_color_manual(values = c("#2C2C7A", "#E69F00")) +
+  theme_classic() +
+  labs(
+    x = "Contrast (%)",
+    y = "P(Yes)",
+    color = "Contrast"
+  ) +
+  theme(
+    legend.position = c(0.4, 1),
+    legend.justification = c(1, 1)
+  )
+
+plot_list <- list(g4, g3, g11, g7, g6, g10)
 plots_no_legend <- lapply(plot_list, function(p) {
   p + theme(
     legend.position = "none",
