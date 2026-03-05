@@ -4,6 +4,7 @@ library(tidyverse)
 library(doParallel)
 library(foreach)
 library(cowplot)
+library(patchwork)
 
 #################### High Alpha ####################
 Contrast <- c(1, 4, seq(10, 100, 15))
@@ -235,7 +236,7 @@ Contrast <- c(1, 4, seq(10, 100, 15))
 Rmax <- 115
 C50 <- 19.3
 n   <-  2.9
-R0 <- Rmax * 0.06
+R0 <- Rmax * 0.045
 
 Max_firing <- Rmax * Contrast^n / (Contrast^n + C50^n)
 df <- data.frame(Contrast, Max_firing)
@@ -416,102 +417,139 @@ df_integrated %>%
 print(ff, n = 99999)
 
 # write.csv(df_integrated, 
-#           file = "samaha_effect_df_integrated.csv", 
-#           row.names = FALSE)
+#          file = "samaha_effect_df_integrated.csv", 
+#          row.names = FALSE)
 
 ### Figures ###
 g1 <- ggplot(df, aes(x = Contrast, y = Max_firing)) +
-  geom_point(size = 2) +
-  coord_cartesian(xlim = c(0, 100), ylim = c(0, 130)) +
-  ylab("Tuning curve peak") +
-  theme_minimal()
+  geom_point(size = 2.2, alpha = 0.85) +
+  scale_x_continuous(
+    limits = c(1, 100),
+    breaks = c(0, 25, 50, 75, 100)
+  ) +
+  coord_cartesian(ylim = c(0, 130)) +
+  scale_y_continuous(breaks = seq(0, 120, by = 60)) +
+  labs(
+    x = "Contrast (%)",
+    y = "Tuning curve peak"
+  ) +
+  theme_classic(base_size = 11)
 
 g2 <- ggplot(df, aes(x = Contrast, y = Max_firing)) +
-  geom_point(size = 2) +
-  scale_x_log10() +
-  ylab("Tuning curve peak") +
-  theme_minimal()
+  geom_point(size = 2.2, alpha = 0.85) +
+  scale_x_log10(
+    limits = c(1, 100),
+    breaks = c(1, 3, 10, 30, 100)
+  ) +
+  coord_cartesian(ylim = c(0, 130)) +
+  scale_y_continuous(breaks = seq(0, 120, by = 60)) +
+  labs(
+    x = "Contrast (%)",
+    y = "Tuning curve peak"
+  ) +
+  theme_classic(base_size = 11)
 
 g3 <- ggplot(df_sum_high, aes(x = Sum_spikes, color = factor(Contrast))) +
-  geom_density(alpha = 0.2, linewidth = 1) +
-  theme_minimal() +
+  geom_density(alpha = 0.85, linewidth = 1) +
+  coord_cartesian(xlim = c(0, 7500), ylim = c(0.0015, 0.03)) +
+  scale_x_continuous(breaks = c(0, 2500, 5000, 7500)) +
+  theme_classic() +
   labs(
-    x = "Sum of spikes",
+    x = "Total spikes",
     y = "Density",
     color = "Contrast",
-    fill =  "Contrast"
   ) + 
   theme(
-    legend.position = c(0.98, 1.05),
+    legend.position = c(1.07, 1.05),
     legend.justification = c(1, 1),
     legend.key.size = unit(0.25, "cm"),
     legend.text = element_text(size = 6),
     legend.title = element_text(size = 8)
   ) +
-  coord_cartesian(xlim = c(0, 10000), ylim = c(0, 0.03)) +
-  ggtitle("High alpha:\nmean spontaneous firing = 3.45") +
-  theme(plot.title = element_text(size = 10, face = "bold", hjust = 0.5))
+  ggtitle("High alpha:\nspontaneous firing = 3.45") +
+  theme(plot.title = element_text(size = 8.5, face = "bold", hjust = 0.5))
 
 g4 <- ggplot(df_sum_low, aes(x = Sum_spikes, color = factor(Contrast))) +
-  geom_density(alpha = 0.2, linewidth = 1) +
-  theme_minimal() +
+  geom_density(alpha = 0.85, linewidth = 1) +
+  coord_cartesian(xlim = c(0, 7500), ylim = c(0.0015, 0.03)) +
+  scale_x_continuous(breaks = c(0, 2500, 5000, 7500)) +
+  theme_classic() +
   labs(
-    x = "Sum of spikes",
+    x = "Total spikes",
     y = "Density",
-    color = "Contrast",
-    fill =  "Contrast"
+    color = "Contrast"
   ) + 
   theme(
-    legend.position = c(0.98, 1.05),
+    legend.position = c(1.07, 1.05),
     legend.justification = c(1, 1),
     legend.key.size = unit(0.25, "cm"),
     legend.text = element_text(size = 6),
     legend.title = element_text(size = 8)
   ) +
-  coord_cartesian(xlim = c(0, 10000), ylim = c(0, 0.03)) +
-  ggtitle("Low alpha:\nmean spontaneous firing = 6.9") +
-  theme(plot.title = element_text(size = 10, face = "bold", hjust = 0.5))
+  ggtitle("Low alpha:\nspontaneous firing = 5.18") +
+  theme(plot.title = element_text(size = 8.5, face = "bold", hjust = 0.5))
 
 df_summary_high$Alpha <- "high"
 df_summary_low$Alpha  <- "low"
 df_summary <- rbind(df_summary_high, df_summary_low)
 
 g5 <- ggplot(df_summary, aes(x = Contrast, y = DeltaC_pred, color = Alpha)) +
-  geom_line() +
-  geom_point() +
-  theme_minimal() +
-  scale_x_log10() +
+  geom_point(size = 2.2, alpha = 0.85) +
+  scale_x_log10(
+    limits = c(1, 100),
+    breaks = c(1, 3, 10, 30, 100)
+  ) +
   scale_y_log10(limits = c(0.2, 45)) +
-  ylab("ΔC (JND of d' = 1)") +
-  xlab("Contrast") +
+  scale_color_manual(values = c("#2C2C7A", "#E69F00")) +
+  labs(
+    x = "Contrast (%)",
+    y = "ΔC (JND of d' = 1)"
+  ) +
+  theme_classic(base_size = 11) +
   theme(
-    legend.position = c(0.4, 0.9),
-    legend.justification = c(1, 1)
+    legend.position = c(0.45, 1),
+    legend.justification = c(1, 1),
+    legend.key = element_blank()
   )
 
 g6 <- ggplot(df_summary, aes(x = Contrast, y = Weber_ratio_pred, color = Alpha)) +
-  geom_line() +
-  geom_point() +
-  theme_minimal() +
-  coord_cartesian(ylim = c(0, 1.5)) +
-  ylab("ΔC/C (Weber fraction)") +
-  xlab("Contrast") +
+  geom_point(size = 2.2, alpha = 0.85) +
+  scale_x_continuous(
+    limits = c(1, 100),
+    breaks = c(0, 25, 50, 75, 100)
+  ) +
+  coord_cartesian(ylim = c(0, 2)) +
+  scale_color_manual(values = c("#2C2C7A", "#E69F00")) +
+  labs(
+    x = "Contrast (%)",
+    y = "ΔC/C (Weber fraction)"
+  ) +
+  theme_classic(base_size = 11) +
   theme(
-    legend.position = c(0.4, 0.9),
-    legend.justification = c(1, 1)
+    legend.position = c(1, 1),
+    legend.justification = c(1, 1),
+    legend.key = element_blank()
   )
 
 g7 <- df_summary %>%
   ggplot(aes(x = Contrast, y = mu, color = Alpha)) +
-  geom_point(size = 2) +
-  # scale_x_log10() +
-  # scale_y_log10() +
+  geom_point(size = 2.2, alpha = 0.85) +
+  scale_x_continuous(
+    limits = c(1, 100),
+    breaks = c(0, 25, 50, 75, 100)
+  ) +
   coord_cartesian(ylim = c(0, 7500)) +
-  theme_minimal() +
-  ylab("Mean total spikes") +
+  scale_y_continuous(breaks = seq(0, 7500, by = 2500)) +
+  scale_color_manual(values = c("#2C2C7A", "#E69F00")) +
+  labs(
+    x = "Contrast (%)",
+    y = "Mean total spikes"
+  ) +
+  theme_classic(base_size = 11) +
   theme(
-    legend.position = c(0.9, 0.5),
-    legend.justification = c(1, 1)
+    legend.position = c(1, 0.55),
+    legend.justification = c(1, 1),
+    legend.key = element_blank()
   )
 
 lfi_results_high$Alpha <- "high"
@@ -520,13 +558,21 @@ lfi_results <- rbind(lfi_results_high, lfi_results_low)
 
 g8 <- lfi_results %>%
   ggplot(aes(x = Contrast, y = LFI_per_neuron, color = Alpha)) +
-  geom_point(size = 2) +
-  scale_x_log10() +
-  ylab("LFI per neuron for orientation") +
-  theme_minimal() +
+  geom_point(size = 2.2, alpha = 0.85) +
+  scale_x_log10(
+    limits = c(1, 100),
+    breaks = c(1, 3, 10, 30, 100)
+  ) +
+  scale_color_manual(values = c("#2C2C7A", "#E69F00")) +
+  labs(
+    x = "Contrast (%)",
+    y = "Orientation LFI"
+  ) +
+  theme_classic(base_size = 11) +
   theme(
-    legend.position = c(0.4, 0.9),
-    legend.justification = c(1, 1)
+    legend.position = c(0.45, 1),
+    legend.justification = c(1, 1),
+    legend.key = element_blank()
   )
 
 decoding_results_high$Alpha <- "high"
@@ -535,32 +581,57 @@ decoding_results <- rbind(decoding_results_high, decoding_results_low)
 
 g9 <- decoding_results %>%
   ggplot(aes(x = Contrast, y = D_prime, color = Alpha)) +
-  geom_point(size = 2) +
-  coord_cartesian(xlim = c(0, 100)) +
-  ylab("d' for orientation") +
-  coord_cartesian(ylim = c(0, 3.5)) +
-  theme_minimal() +
+  geom_point(size = 2.2, alpha = 0.85) +
+  scale_x_continuous(
+    limits = c(1, 100),
+    breaks = c(0, 25, 50, 75, 100)
+  ) +
+  scale_y_continuous(
+    limits = c(0, 4),
+    breaks = seq(0, 4, by = 1)
+  ) +
+  scale_color_manual(values = c("#2C2C7A", "#E69F00")) +
+  labs(
+    x = "Contrast (%)",
+    y = "Orientation d'"
+  ) +
+  theme_classic(base_size = 11) +
   theme(
-    legend.position = c(0.95, 0.5),
-    legend.justification = c(1, 1)
+    legend.position = c(1, 0.55),
+    legend.justification = c(1, 1),
+    legend.key = element_blank()
   )
 
 g10 <- decoding_results %>%
   ggplot(aes(x = Contrast, y = D_prime, color = Alpha)) +
-  geom_point(size = 2) +
-  coord_cartesian(xlim = c(0, 100)) +
-  scale_x_log10() +
-  ylab("d' for orientation") +
-  coord_cartesian(ylim = c(0, 3.5)) +
-  theme_minimal() +
+  geom_point(size = 2.2, alpha = 0.85) +
+  scale_x_log10(
+    limits = c(1, 100),
+    breaks = c(1, 3, 10, 30, 100)
+  ) +
+  scale_y_continuous(
+    limits = c(0, 4),
+    breaks = seq(0, 4, by = 1)
+  ) +
+  scale_color_manual(values = c("#2C2C7A", "#E69F00")) +
+  labs(
+    x = "Contrast (%)",
+    y = "Orientation d'"
+  ) +
+  theme_classic(base_size = 11) +
   theme(
-    legend.position = c(0.95, 0.5),
-    legend.justification = c(1, 1)
+    legend.position = c(0.4, 1),
+    legend.justification = c(1, 1),
+    legend.key = element_blank()
   )
 
-p1 <- plot_grid(g4, g3,  ncol = 2)
-p2 <- plot_grid(g1, g7,  ncol = 2)
-p3 <- plot_grid(g5, g6,  ncol = 2)
-p4 <- plot_grid(g10, g8, ncol = 2)
-samaha_effect <- plot_grid(p1, p2, p3, p4, ncol = 1, rel_heights = c(1, 1))
-ggsave("samaha_effect.png", samaha_effect, width = 7, height = 9, dpi = 300)
+plot_list <- list(g4, g3, g7, g5, g6, g10)
+plots_no_legend <- lapply(plot_list, function(p) {
+  p + theme(
+    legend.position = "none",
+    plot.margin = margin(t = 5, r = 5, b = 5, l = 5, unit = "pt")
+  )
+})
+
+samaha_effect_final <- wrap_plots(plots_no_legend, ncol = 3)
+ggsave("samaha_effect.png", samaha_effect_final, width = 6, height = 4, dpi = 300)

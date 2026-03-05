@@ -485,8 +485,10 @@ g5 <- ggplot(df_summary, aes(x = Contrast, y = DeltaC_pred, color = Attention)) 
   ylab("ΔC (JND of d' = 1)") +
   xlab("Contrast") +
   theme(
-    legend.position = c(0.4, 0.9),
-    legend.justification = c(1, 1)
+    legend.position = c(0.45, 0.95),
+    legend.justification = c(1, 1),
+    legend.text = element_text(size = 8),
+    legend.title = element_text(size = 9)
   )
 
 g6 <- ggplot(df_summary, aes(x = Contrast, y = Weber_ratio_pred, color = Attention)) +
@@ -497,8 +499,10 @@ g6 <- ggplot(df_summary, aes(x = Contrast, y = Weber_ratio_pred, color = Attenti
   ylab("ΔC/C (Weber fraction)") +
   xlab("Contrast") +
   theme(
-    legend.position = c(0.4, 0.9),
-    legend.justification = c(1, 1)
+    legend.position = c(0.45, 0.95),
+    legend.justification = c(1, 1),
+    legend.text = element_text(size = 8),
+    legend.title = element_text(size = 9)
   )
 
 g7 <- df_summary %>%
@@ -507,6 +511,7 @@ g7 <- df_summary %>%
   # scale_x_log10() +
   # scale_y_log10() +
   coord_cartesian(ylim = c(0, 7500)) +
+  scale_y_continuous(breaks = seq(0, 7500, by = 2500)) +
   theme_minimal() +
   ylab("Mean total spikes") +
   theme(
@@ -522,11 +527,13 @@ g8 <- lfi_results %>%
   ggplot(aes(x = Contrast, y = LFI_per_neuron, color = Attention)) +
   geom_point(size = 2) +
   scale_x_log10() +
-  ylab("LFI per neuron for orientation") +
+  ylab("Orientation LFI") +
   theme_minimal() +
   theme(
-    legend.position = c(0.4, 0.9),
-    legend.justification = c(1, 1)
+    legend.position = c(0.45, 0.95),
+    legend.justification = c(1, 1),
+    legend.text = element_text(size = 8),
+    legend.title = element_text(size = 9)
   )
 
 decoding_results_high$Attention <- "high"
@@ -537,12 +544,14 @@ g9 <- decoding_results %>%
   ggplot(aes(x = Contrast, y = D_prime, color = Attention)) +
   geom_point(size = 2) +
   coord_cartesian(xlim = c(0, 100)) +
-  ylab("d' for orientation") +
+  ylab("Orientation d'") +
   coord_cartesian(ylim = c(0, 3.5)) +
   theme_minimal() +
   theme(
-    legend.position = c(0.95, 0.5),
-    legend.justification = c(1, 1)
+    legend.position = c(0.45, 0.95),
+    legend.justification = c(1, 1),
+    legend.text = element_text(size = 8),
+    legend.title = element_text(size = 9)
   )
 
 g10 <- decoding_results %>%
@@ -550,12 +559,14 @@ g10 <- decoding_results %>%
   geom_point(size = 2) +
   coord_cartesian(xlim = c(0, 100)) +
   scale_x_log10() +
-  ylab("d' for orientation") +
+  ylab("Orientation d'") +
   coord_cartesian(ylim = c(0, 3.5)) +
   theme_minimal() +
   theme(
-    legend.position = c(0.95, 0.5),
-    legend.justification = c(1, 1)
+    legend.position = c(0.45, 0.95),
+    legend.justification = c(1, 1),
+    legend.text = element_text(size = 8),
+    legend.title = element_text(size = 9)
   )
 
 df_sum_high$Attention <- "high"
