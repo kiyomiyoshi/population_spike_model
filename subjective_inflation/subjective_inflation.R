@@ -4,6 +4,7 @@ library(tidyverse)
 library(doParallel)
 library(foreach)
 library(cowplot)
+library(patchwork)
 
 #################### High Attention ####################
 Contrast <- c(1, 4, seq(10, 100, 15))
@@ -421,102 +422,189 @@ print(ff, n = 99999)
 
 ### Figures ###
 g1 <- ggplot(df, aes(x = Contrast, y = Max_firing)) +
-  geom_point(size = 2) +
-  coord_cartesian(xlim = c(0, 100), ylim = c(0, 130)) +
-  ylab("Tuning curve peak") +
-  theme_minimal()
+  geom_point(size = 2.2, alpha = 0.85) +
+  scale_x_continuous(
+    limits = c(1, 100),
+    breaks = c(0, 25, 50, 75, 100)
+  ) +
+  coord_cartesian(ylim = c(0, 130)) +
+  scale_y_continuous(breaks = seq(0, 120, by = 60)) +
+  labs(
+    x = "Contrast (%)",
+    y = "Tuning curve peak"
+  ) +
+  theme_classic(base_size = 11)
 
 g2 <- ggplot(df, aes(x = Contrast, y = Max_firing)) +
-  geom_point(size = 2) +
-  scale_x_log10() +
-  ylab("Tuning curve peak") +
-  theme_minimal()
+  geom_point(size = 2.2, alpha = 0.85) +
+  scale_x_log10(
+    limits = c(1, 100),
+    breaks = c(1, 3, 10, 30, 100)
+  ) +
+  coord_cartesian(ylim = c(0, 130)) +
+  scale_y_continuous(breaks = seq(0, 120, by = 60)) +
+  labs(
+    x = "Contrast (%)",
+    y = "Tuning curve peak"
+  ) +
+  theme_classic(base_size = 11)
+
+df_sum_high$Attention <- "high"
+df_sum_low$Attention  <- "low"
+df_sum <- rbind(df_sum_high, df_sum_low)
+df_sum %>%
+  dplyr::filter(Contrast == 1 | Contrast == 4) %>%
+  summarise(Criterion = mean(Sum_spikes)) %>%
+  as.numeric() -> criterion
+
+default_colors <- scales::hue_pal()(9)
+first_two_colors <- default_colors[1:2]
+
+df_sub <- subset(df_sum, Contrast %in% c(1, 4) & Attention == "high")
+df_sub$Contrast <- factor(df_sub$Contrast, levels = c(1, 4))
+
+g_inset <- ggplot(df_sub, aes(x = Sum_spikes, color = factor(Contrast))) +
+  geom_vline(xintercept = criterion, linetype = "dashed", linewidth = 0.3) +
+  geom_density(alpha = 0.85, linewidth = 0.7) +
+  scale_x_continuous(limits = c(500, 800), breaks = c(500, 800)) +
+  scale_y_continuous(limits = c(0, 0.02), breaks = c(0, 0.01, 0.02)) + 
+  theme_minimal(base_size = 11) +
+  theme(
+    legend.position = "none",
+    axis.title = element_blank(),
+    axis.text = element_text(size = 6)
+  ) +
+  scale_color_manual(values = first_two_colors)
 
 g3 <- ggplot(df_sum_high, aes(x = Sum_spikes, color = factor(Contrast))) +
-  geom_density(alpha = 0.2, linewidth = 1) +
-  theme_minimal() +
+  geom_density(alpha = 0.85, linewidth = 1) +
+  coord_cartesian(xlim = c(0, 7500), ylim = c(0.0015, 0.03)) +
+  scale_x_continuous(breaks = c(0, 2500, 5000, 7500)) +
+  theme_classic() +
   labs(
-    x = "Sum of spikes",
+    x = "Total spikes",
     y = "Density",
-    color = "Contrast",
-    fill =  "Contrast"
+    color = "Contrast"
   ) + 
   theme(
-    legend.position = c(0.98, 1.05),
+    legend.position = c(1.07, 1.05),
     legend.justification = c(1, 1),
     legend.key.size = unit(0.25, "cm"),
     legend.text = element_text(size = 6),
     legend.title = element_text(size = 8)
   ) +
-  coord_cartesian(xlim = c(0, 10000), ylim = c(0, 0.03)) +
-  ggtitle("High attention:Fano factor = 1.0") +
-  theme(plot.title = element_text(size = 11, face = "bold", hjust = 0.5))
+  ggtitle("High attention:\nFano factor = 1.0") +
+  theme(plot.title = element_text(size = 8.5, face = "bold", hjust = 0.5))
+
+g3 <- g3 + annotation_custom(
+  grob = ggplotGrob(g_inset),
+  xmin = 2000, xmax = 8000,
+  ymin = 0.01, ymax = 0.03
+)
+
+df_sub <- subset(df_sum, Contrast %in% c(1, 4) & Attention == "low")
+df_sub$Contrast <- factor(df_sub$Contrast, levels = c(1, 4))
+
+g_inset <- ggplot(df_sub, aes(x = Sum_spikes, color = factor(Contrast))) +
+  geom_vline(xintercept = criterion, linetype = "dashed", linewidth = 0.3) +
+  geom_density(alpha = 0.85, linewidth = 0.7) +
+  scale_x_continuous(limits = c(500, 800), breaks = c(500, 800)) +
+  scale_y_continuous(limits = c(0, 0.02), breaks = c(0, 0.01, 0.02)) + 
+  theme_minimal(base_size = 11) +
+  theme(
+    legend.position = "none",
+    axis.title = element_blank(),
+    axis.text = element_text(size = 6)
+  ) +
+  scale_color_manual(values = first_two_colors)
 
 g4 <- ggplot(df_sum_low, aes(x = Sum_spikes, color = factor(Contrast))) +
-  geom_density(alpha = 0.2, linewidth = 1) +
-  theme_minimal() +
+  geom_density(alpha = 0.85, linewidth = 1) +
+  coord_cartesian(xlim = c(0, 7500), ylim = c(0.0015, 0.03)) +
+  scale_x_continuous(breaks = c(0, 2500, 5000, 7500)) +
+  theme_classic() +
   labs(
-    x = "Sum of spikes",
+    x = "Total spikes",
     y = "Density",
-    color = "Contrast",
-    fill =  "Contrast"
+    color = "Contrast"
   ) + 
   theme(
-    legend.position = c(0.98, 1.05),
+    legend.position = c(1.07, 1.05),
     legend.justification = c(1, 1),
     legend.key.size = unit(0.25, "cm"),
     legend.text = element_text(size = 6),
     legend.title = element_text(size = 8)
   ) +
-  coord_cartesian(xlim = c(0, 10000), ylim = c(0, 0.03)) +
-  ggtitle("Low attention: Fano factor = 1.3") +
-  theme(plot.title = element_text(size = 10, face = "bold", hjust = 0.5))
+  ggtitle("Low attention:\nFano factor = 1.3") +
+  theme(plot.title = element_text(size = 8.5, face = "bold", hjust = 0.5))
+
+g4 <- g4 + annotation_custom(
+  grob = ggplotGrob(g_inset),
+  xmin = 2000, xmax = 8000,
+  ymin = 0.01, ymax = 0.03
+)
 
 df_summary_high$Attention <- "high"
 df_summary_low$Attention  <- "low"
 df_summary <- rbind(df_summary_high, df_summary_low)
 
 g5 <- ggplot(df_summary, aes(x = Contrast, y = DeltaC_pred, color = Attention)) +
-  geom_line() +
-  geom_point() +
-  theme_minimal() +
-  scale_x_log10() +
+  geom_point(size = 2.2, alpha = 0.85) +
+  scale_x_log10(
+    limits = c(1, 100),
+    breaks = c(1, 3, 10, 30, 100)
+  ) +
   scale_y_log10(limits = c(0.2, 45)) +
-  ylab("ΔC (JND of d' = 1)") +
-  xlab("Contrast") +
+  scale_color_manual(values = c("#2C2C7A", "#E69F00")) +
+  labs(
+    x = "Contrast (%)",
+    y = "ΔC (JND of d' = 1)"
+  ) +
+  theme_classic(base_size = 11) +
   theme(
-    legend.position = c(0.45, 0.95),
+    legend.position = c(0.45, 1),
     legend.justification = c(1, 1),
-    legend.text = element_text(size = 8),
-    legend.title = element_text(size = 9)
+    legend.key = element_blank()
   )
 
 g6 <- ggplot(df_summary, aes(x = Contrast, y = Weber_ratio_pred, color = Attention)) +
-  geom_line() +
-  geom_point() +
-  theme_minimal() +
-  coord_cartesian(ylim = c(0, 1.5)) +
-  ylab("ΔC/C (Weber fraction)") +
-  xlab("Contrast") +
+  geom_point(size = 2.2, alpha = 0.85) +
+  scale_x_continuous(
+    limits = c(1, 100),
+    breaks = c(0, 25, 50, 75, 100)
+  ) +
+  coord_cartesian(ylim = c(0, 2)) +
+  scale_color_manual(values = c("#2C2C7A", "#E69F00")) +
+  labs(
+    x = "Contrast (%)",
+    y = "ΔC/C (Weber fraction)"
+  ) +
+  theme_classic(base_size = 11) +
   theme(
-    legend.position = c(0.45, 0.95),
+    legend.position = c(1, 1),
     legend.justification = c(1, 1),
-    legend.text = element_text(size = 8),
-    legend.title = element_text(size = 9)
+    legend.key = element_blank()
   )
 
 g7 <- df_summary %>%
   ggplot(aes(x = Contrast, y = mu, color = Attention)) +
-  geom_point(size = 2) +
-  # scale_x_log10() +
-  # scale_y_log10() +
+  geom_point(size = 2.2, alpha = 0.85) +
+  scale_x_continuous(
+    limits = c(1, 100),
+    breaks = c(0, 25, 50, 75, 100)
+  ) +
   coord_cartesian(ylim = c(0, 7500)) +
   scale_y_continuous(breaks = seq(0, 7500, by = 2500)) +
-  theme_minimal() +
-  ylab("Mean total spikes") +
+  scale_color_manual(values = c("#2C2C7A", "#E69F00")) +
+  labs(
+    x = "Contrast (%)",
+    y = "Mean total spikes"
+  ) +
+  theme_classic(base_size = 11) +
   theme(
-    legend.position = c(0.9, 0.5),
-    legend.justification = c(1, 1)
+    legend.position = c(1, 0.55),
+    legend.justification = c(1, 1),
+    legend.key = element_blank()
   )
 
 lfi_results_high$Attention <- "high"
@@ -525,15 +613,21 @@ lfi_results <- rbind(lfi_results_high, lfi_results_low)
 
 g8 <- lfi_results %>%
   ggplot(aes(x = Contrast, y = LFI_per_neuron, color = Attention)) +
-  geom_point(size = 2) +
-  scale_x_log10() +
-  ylab("Orientation LFI") +
-  theme_minimal() +
+  geom_point(size = 2.2, alpha = 0.85) +
+  scale_x_log10(
+    limits = c(1, 100),
+    breaks = c(1, 3, 10, 30, 100)
+  ) +
+  scale_color_manual(values = c("#2C2C7A", "#E69F00")) +
+  labs(
+    x = "Contrast (%)",
+    y = "Orientation LFI"
+  ) +
+  theme_classic(base_size = 11) +
   theme(
-    legend.position = c(0.45, 0.95),
+    legend.position = c(0.45, 1),
     legend.justification = c(1, 1),
-    legend.text = element_text(size = 8),
-    legend.title = element_text(size = 9)
+    legend.key = element_blank()
   )
 
 decoding_results_high$Attention <- "high"
@@ -542,89 +636,101 @@ decoding_results <- rbind(decoding_results_high, decoding_results_low)
 
 g9 <- decoding_results %>%
   ggplot(aes(x = Contrast, y = D_prime, color = Attention)) +
-  geom_point(size = 2) +
-  coord_cartesian(xlim = c(0, 100)) +
-  ylab("Orientation d'") +
-  coord_cartesian(ylim = c(0, 3.5)) +
-  theme_minimal() +
+  geom_point(size = 2.2, alpha = 0.85) +
+  scale_x_continuous(
+    limits = c(1, 100),
+    breaks = c(0, 25, 50, 75, 100)
+  ) +
+  scale_y_continuous(
+    limits = c(0, 4),
+    breaks = seq(0, 4, by = 1)
+  ) +
+  scale_color_manual(values = c("#2C2C7A", "#E69F00")) +
+  labs(
+    x = "Contrast (%)",
+    y = "Orientation d'"
+  ) +
+  theme_classic(base_size = 11) +
   theme(
-    legend.position = c(0.45, 0.95),
+    legend.position = c(1, 0.55),
     legend.justification = c(1, 1),
-    legend.text = element_text(size = 8),
-    legend.title = element_text(size = 9)
+    legend.key = element_blank()
   )
 
 g10 <- decoding_results %>%
   ggplot(aes(x = Contrast, y = D_prime, color = Attention)) +
-  geom_point(size = 2) +
-  coord_cartesian(xlim = c(0, 100)) +
-  scale_x_log10() +
-  ylab("Orientation d'") +
-  coord_cartesian(ylim = c(0, 3.5)) +
-  theme_minimal() +
+  geom_point(size = 2.2, alpha = 0.85) +
+  scale_x_log10(
+    limits = c(1, 100),
+    breaks = c(1, 3, 10, 30, 100)
+  ) +
+  scale_y_continuous(
+    limits = c(0, 4),
+    breaks = seq(0, 4, by = 1)
+  ) +
+  scale_color_manual(values = c("#2C2C7A", "#E69F00")) +
+  labs(
+    x = "Contrast (%)",
+    y = "Orientation d'"
+  ) +
+  theme_classic(base_size = 11) +
   theme(
-    legend.position = c(0.45, 0.95),
+    legend.position = c(0.4, 1),
     legend.justification = c(1, 1),
-    legend.text = element_text(size = 8),
-    legend.title = element_text(size = 9)
+    legend.key = element_blank()
   )
 
-df_sum_high$Attention <- "high"
-df_sum_low$Attention  <- "low"
-df_sum <- rbind(df_sum_high, df_sum_low)
-
-df_sum %>%
-  dplyr::filter(Contrast == 1 | Contrast == 4) %>%
-  summarise(Criterion = mean(Sum_spikes)) %>%
-  as.numeric() -> criterion
-
 g11 <- ggplot(subset(df_sum, df_sum$Contrast == 1 | df_sum$Contrast == 4), 
-            aes(x = Sum_spikes, color = factor(Contrast))) +
+              aes(x = Sum_spikes, color = factor(Contrast))) +
   geom_vline(xintercept = criterion, linetype = "dashed") +
-  geom_density(alpha = 0.2, linewidth = 1) +
-  theme_minimal() +
+  geom_density(alpha = 0.85, linewidth = 1) +
+  coord_cartesian(xlim = c(500, 800)) +
+  scale_y_continuous(limits = c(0, 0.02), breaks = c(0, 0.01, 0.02)) + 
+  theme_classic(base_size = 11) +
   labs(
-    x = "Sum of spikes",
+    x = "Total spikes",
     y = "Density",
-    color = "Contrast",
-    fill =  "Contrast"
+    color = "Contrast"
   ) + 
   theme(
-    legend.position = c(0.98, 1.05),
+    legend.position = c(1, 0.95),
     legend.justification = c(1, 1),
-    legend.key.size = unit(0.25, "cm"),
-    legend.text = element_text(size = 6),
-    legend.title = element_text(size = 8)
+    legend.key = element_blank()
   ) +
-  coord_cartesian(xlim = c(500, 800), ylim = c(0, 0.02)) +
-  facet_wrap(.~ Attention, nrow = 2)
+  facet_wrap(.~ Attention, nrow = 2) +
+  scale_color_manual(values = first_two_colors)
 g11
-  
+
 g12 <- df_sum %>%
   dplyr::filter(Contrast == 1 | Contrast == 4) %>%
   mutate(Yes = Sum_spikes > criterion) %>%
   group_by(Contrast, Attention) %>%
   summarise(P_yes = mean(Yes)) %>%
-  ggplot(aes(x = Contrast, y = P_yes, color = factor(Contrast), shape = Attention)) +
-  geom_point(size = 3) +
-  ylim(0, 1) +
-  theme_minimal() +
+  ggplot(aes(x = Contrast, y = P_yes, color = Attention)) +
+  geom_point(size = 2.2, alpha = 0.85) +
+  geom_line(alpha = 0.85, linewidth = 1) +
+  scale_x_continuous(limits = c(1, 4), breaks = c(1, 4)) + 
+  scale_y_continuous(limits = c(0, 1), breaks = c(0, 0.25, 0.5, 0.75, 1)) + 
+  scale_color_manual(values = c("#2C2C7A", "#E69F00")) +
+  theme_classic() +
   labs(
-    x = "Contrast",
+    x = "Contrast (%)",
     y = "P(Yes)",
     color = "Contrast",
     shape = "Attention"
   ) +
   theme(
-    legend.position = c(0.95, 0.3),
-    legend.justification = c(1, 0.5)
-  ) +
-  guides(color = "none")
+    legend.position = c(0.4, 1),
+    legend.justification = c(1, 1)
+  )
 
-p1 <- plot_grid(g4, g3,  ncol = 2)
-p2 <- plot_grid(g1, g7,  ncol = 2)
-p3 <- plot_grid(g5, g6,  ncol = 2)
-p4 <- plot_grid(g10, g8, ncol = 2)
-p5 <- plot_grid(g11, g12, ncol = 2)
-subjective_inflation <- plot_grid(p1, p2, p3, p4, p5, ncol = 1, rel_heights = c(1, 1))
-ggsave("subjective_inflation.png", subjective_inflation, width = 7, height = 11.25, dpi = 300)
+plot_list <- list(g4, g3, g12, g7, g6, g10)
+plots_no_legend <- lapply(plot_list, function(p) {
+  p + theme(
+    legend.position = "none",
+    plot.margin = margin(t = 5, r = 5, b = 5, l = 5, unit = "pt")
+  )
+})
+
+subjective_inflation <- wrap_plots(plots_no_legend, ncol = 3)
+ggsave("subjective_inflation.png", subjective_inflation, width = 6, height = 4, dpi = 300)
