@@ -25,13 +25,6 @@ max_firing_rate <- 60                                          # Maximum firing 
 tuning_width    <- 40                                          # Tuning width (standard deviation) of each neuron's response curve
 n_trials <- 10000
 
-# Spontaneous firing need to be considered
-# spontaneous_firing_rate <- 0
-# mu_stim  <- tuning_curves[, input_120[i] + 1]
-# mu_total <- mu_stim + spontaneous_firing_rate
-# size <- mu_total / 0.05   # Fano = 1.05
-# resp <- rnbinom(n_neurons, size = size, mu = mu_total)
-
 tuning_curves <- matrix(0, nrow = n_neurons, ncol = length(orientations))
 for (i in 1:n_neurons) {
   tuning_curves[i, ] <- max_firing_rate * exp(-0.5 * (pmin(abs(orientations - preferred_orientations[i]), 
