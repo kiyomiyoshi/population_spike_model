@@ -1,28 +1,29 @@
 library(tidyverse)
 library(doParallel)
 library(foreach)
+library(cowplot)
+library(patchwork)
 
 cl <- makeCluster(parallel::detectCores() - 1)
 registerDoParallel(cl)
 
 # For visualization
 color_wheel <- function(alpha = 1) {
-  h <- c(seq(320, 0, -1), seq(360, 321, -1))[-321]
-  h <- h / 360
-  s <- rep(1, 360)
-  v <- rep(1, 360)
+  h <- c(seq(160, 0, -1), seq(180, 161, -1))[-161]
+  h <- h / 180
+  s <- rep(1, 180)
+  v <- rep(1, 180)
   hsv(h, s, v, alpha)
 }
 
 colors <- color_wheel()
 
-### Attended ###
-# Parameters
-n_neurons <- 360                                               # Number of neurons in the population
-orientations <- seq(1, 360, by = 1)                            # Possible orientations (0 to 359 degrees)
+### High contrast ###
+n_neurons <- 180                                               # Number of neurons in the population
+orientations <- seq(1, 180, by = 1)                            # Possible orientations (1 to 180 degrees)
 preferred_orientations <-  seq(1, 360, length.out = n_neurons) # Preferred orientation of each neuron
-max_firing_rate <- 60                                          # Maximum firing rate of each neuron
-tuning_width    <- 40                                          # Tuning width (standard deviation) of each neuron's response curve
+max_firing_rate <- 115                                         # Maximum firing rate of each neuron
+tuning_width    <- 20                                          # Tuning width (standard deviation) of each neuron's response curve
 n_trials <- 10000
 
 # Spontaneous firing need to be considered

@@ -2,7 +2,16 @@ library(tidyverse)
 library(cowplot)
 library(patchwork)
 
-# Parameters
+color_wheel <- function(alpha = 1) {
+  h <- c(seq(160, 0, -1), seq(180, 161, -1))[-161]
+  h <- h / 180
+  s <- rep(1, 180)
+  v <- rep(1, 180)
+  hsv(h, s, v, alpha)
+}
+
+colors <- color_wheel()
+
 n_neurons <- 180
 orientations <- seq(1, 180, by = 1)
 preferred_orientations <-  seq(1, 180, length.out = n_neurons)
@@ -19,16 +28,6 @@ FiringRate <- c()
 for (i in 1:n_neurons) {
   FiringRate <- c(FiringRate, tuning_curves[i, ])
 }
-
-color_wheel <- function(alpha = 1) {
-  h <- c(seq(160, 0, -1), seq(180, 161, -1))[-161]
-  h <- h / 180
-  s <- rep(1, 180)
-  v <- rep(1, 180)
-  hsv(h, s, v, alpha)
-}
-
-colors <- color_wheel()
 
 df_tuning <- data.frame(Orientation = rep(orientations, n_neurons),
                         FiringRate = FiringRate,

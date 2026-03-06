@@ -21,7 +21,7 @@ cl <- makeCluster(parallel::detectCores() - 1)
 registerDoParallel(cl)
 
 n_neurons <- 180                                              # Number of neurons in the population
-orientations <- seq(1, 180, by = 1)                           # Possible orientations (0 to 359 degrees)
+orientations <- seq(1, 180, by = 1)                           # Possible orientations (1 to 180 degrees)
 preferred_orientations <- seq(1, 180, length.out = n_neurons) # Preferred orientation of each neuron
 max_firing_seq <- df$Max_firing                               # Maximum firing rate of each neuron
 contrast <- df$Contrast
@@ -53,7 +53,7 @@ for (max_firing_rate in max_firing_seq) {
   ) %dopar% {
     
     input_90 <- rnorm(n_trials, 90, 0)
-    idx <- round(input_90[i]) + 1
+    idx <- round(input_90[i]) 
     idx <- pmin(pmax(idx, 1), 180)
     
     mu <- tuning_curves[, idx]
@@ -76,7 +76,7 @@ for (max_firing_rate in max_firing_seq) {
   ) %dopar% {
     
     input_91 <- rnorm(n_trials, 91, 0)
-    idx <- round(input_91[i]) + 1
+    idx <- round(input_91[i]) 
     idx <- pmin(pmax(idx, 1), 180)
     
     mu <- tuning_curves[, idx]
@@ -278,7 +278,7 @@ for (max_firing_rate in max_firing_seq) {
   ) %dopar% {
     
     input_90 <- rnorm(n_trials, 90, 0)
-    idx <- round(input_90[i]) + 1
+    idx <- round(input_90[i]) 
     idx <- pmin(pmax(idx, 1), 180)
     
     mu <- tuning_curves[, idx]
@@ -301,7 +301,7 @@ for (max_firing_rate in max_firing_seq) {
   ) %dopar% {
     
     input_91 <- rnorm(n_trials, 91, 0)
-    idx <- round(input_91[i]) + 1
+    idx <- round(input_91[i]) 
     idx <- pmin(pmax(idx, 1), 180)
     
     mu <- tuning_curves[, idx]
