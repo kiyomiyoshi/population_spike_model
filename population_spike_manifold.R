@@ -1,8 +1,12 @@
+# Contrastについてなだらかな彩度変化に変更
+# 3Dプロットは少数の点の散布図に変更し、90 vs. 100を異なる色相にする
+
 library(tidyverse)
 library(doParallel)
 library(foreach)
 library(cowplot)
 library(patchwork)
+library(plotly)
 
 cl <- makeCluster(parallel::detectCores() - 1)
 registerDoParallel(cl)
@@ -47,7 +51,7 @@ orientations <- seq(1, 180, by = 1)                            # Possible orient
 preferred_orientations <-  seq(1, 180, length.out = n_neurons) # Preferred orientation of each neuron
 max_firing_rate <- 115                                         # Maximum firing rate of each neuron
 tuning_width    <- 20                                          # Tuning width (standard deviation) of each neuron's response curve
-n_trials <- 10000
+n_trials <- 50000
 
 tuning_curves <- matrix(0, nrow = n_neurons, ncol = length(orientations))
 for (i in 1:n_neurons) {
@@ -107,7 +111,7 @@ colnames(df_responses_1) <- c("Spikes", "Neuron", "Stimulus", "Trial")
 n_neurons <- 180                                               
 orientations <- seq(1, 180, by = 1)                            
 preferred_orientations <-  seq(1, 180, length.out = n_neurons) 
-max_firing_rate <- Rmax * 20^n / (20^n + C50^n) # 20% contrast                                 
+max_firing_rate <- Rmax * 15^n / (15^n + C50^n) # 15% contrast                                 
 tuning_width <-    20                                     
 
 tuning_curves <- matrix(0, nrow = n_neurons, ncol = length(orientations))
@@ -194,10 +198,103 @@ g4
 g5 <- df %>%
   filter(Neuron %in% c(90, 100)) %>%
   pivot_wider(names_from = Neuron, values_from = Spikes) %>%
-  ggplot(aes(x = `90`, y = `100`, color = factor(Stimulus))) +
-  geom_point(size = 3, alpha = 0.2) +
+  ggplot(aes(x = `90`, y = `100`,
+             color = Contrast)) +
+  stat_ellipse(aes(group = interaction(Contrast, Stimulus)), level = c(0.5)) + # parametric density
+  stat_ellipse(aes(group = interaction(Contrast, Stimulus)), level = c(0.7)) + 
+  stat_ellipse(aes(group = interaction(Contrast, Stimulus)), level = c(0.9)) + 
   labs(x = "Neuron 90", y = "Neuron 100") +
+  coord_cartesian(xlim = c(0,150), ylim = c(0,150)) +
+  scale_color_manual(values = c("#2C2C7A", "#E69F00")) +
+  theme_classic() +
+  theme(
+    legend.position = c(0.4, 1),
+    legend.justification = c(1, 1)
+  )
+
+g6 <- df %>%
+  filter(Neuron %in% c(90, 100)) %>%
+  pivot_wider(names_from = Neuron, values_from = Spikes) %>%
+  ggplot(aes(x = `90`, y = `100`, color = Contrast)) +
+  geom_density_2d(aes(linetype = factor(Stimulus)), linewidth = 1) + # nonparametric density
+  labs(x = "Neuron 90", y = "Neuron 100",
+       color = "Contrast", linetype = "Stimulus") +
   coord_cartesian(xlim = c(0, 150), ylim = c(0, 150)) +
-  theme_minimal() +
-  facet_wrap(. ~ Contrast)
-g5
+  scale_color_manual(values = c("#2C2C7A", "#E69F00")) +
+  theme_classic() +
+  theme(
+    legend.position = c(0.4, 1),
+    legend.justification = c(1, 1)
+  ) +
+  theme(
+    legend.position = c(0.4, 1),
+    legend.justification = c(1, 1)
+  )
+
+df3 <- df %>% 
+  filter(Neuron %in% c(80, 90, 100)) %>% 
+  pivot_wider(id_cols = c(Contrast, Stimulus, Trial), 
+              names_from = Neuron, values_from = Spikes)
+
+u <- seq(0, 2*pi, length.out = 50)
+v <- seq(0, pi, length.out = 50)
+x_sphere <- outer(cos(u), sin(v))
+y_sphere <- outer(sin(u), sin(v))
+z_sphere <- outer(rep(1,length(u)), cos(v)) 
+unit_sphere <- rbind(as.vector(x_sphere), as.vector(y_sphere), as.vector(z_sphere))
+
+ellipsoids <- df3 %>% 
+  group_by(Stimulus, Contrast) %>% 
+  group_map(~{
+    
+    mu <- colMeans(.x[,c("80","90","100")])
+    
+    sigma <- cov(.x[,c("80","90","100")])
+    if(det(sigma) <= 0){
+      sigma <- sigma + diag(1e-6,3)
+    }
+    
+    eig <- eigen(sigma)
+    
+    coords <- eig$vectors %*% diag(sqrt(eig$values)) %*% unit_sphere + mu
+    
+    list(
+      x = matrix(coords[1,], nrow=length(u)),
+      y = matrix(coords[2,], nrow=length(u)),
+      z = matrix(coords[3,], nrow=length(u)),
+      Stimulus = .y$Stimulus,
+      Contrast = .y$Contrast
+    )
+    
+  })
+
+p <- plot_ly()
+
+for (e in ellipsoids) {
+  
+  col <- ifelse(e$Contrast == 20, "Reds", "Blues")  # Contrastで色分け
+  
+  p <- p %>% add_surface(
+    x = e$x,
+    y = e$y,
+    z = e$z,
+    colorscale = col,
+    showscale = FALSE,
+    opacity = 0.6,
+    name = paste("Stim:", e$Stimulus, "Con:", e$Contrast),
+    hoverinfo = "text",
+    text = paste("Stimulus:", e$Stimulus,
+                 "<br>Contrast:", e$Contrast)
+  )
+}
+
+p <- p %>%
+  layout(
+    scene = list(
+      xaxis = list(title = "Neuron 80", range = c(0,150)),
+      yaxis = list(title = "Neuron 90", range = c(0,150)),
+      zaxis = list(title = "Neuron 100", range = c(0,150))
+    )
+  )
+
+p
