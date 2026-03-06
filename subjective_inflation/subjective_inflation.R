@@ -702,7 +702,7 @@ g11 <- df_sum %>%
     legend.justification = c(1, 1)
   )
 
-plot_list <- list(g4, g3, g11, g7, g6, g10)
+plot_list <- list(g4, g3, g11, g5, g6, g10)
 plots_no_legend <- lapply(plot_list, function(p) {
   p + theme(
     legend.position = "none",
