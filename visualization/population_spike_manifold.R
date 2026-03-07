@@ -6,6 +6,7 @@ library(patchwork)
 library(plotly)
 library(magick)
 library(webshot2)
+library(minpack.lm)
 
 cl <- makeCluster(parallel::detectCores() - 1)
 registerDoParallel(cl)
@@ -57,7 +58,7 @@ colors <- color_wheel()
 n_neurons <- 180                                              
 orientations <- seq(1, 180, by = 1)                           
 preferred_orientations <-  seq(1, 180, length.out = n_neurons)
-max_firing_rate <- Rmax * 25^n / (25^n + C50^n) # 25% contrast
+max_firing_rate <- Rmax * 100^n / (100^n + C50^n) # 25% contrast
 tuning_width    <- 20                                         
 n_trials <- 20
 
@@ -211,15 +212,56 @@ df_responses_high$Contrast <- "high"
 df_responses_low$Contrast  <- "low"
 df_responses <- rbind(df_responses_high, df_responses_low)
 
-p2 <- ggplot(df_responses) + geom_col(aes(x = Neuron, y = Spikes), color = "grey34") +
-  theme_classic(base_size = 12) + 
-  ylim(0, 150) + ylab("Spikes") +
-  facet_wrap(. ~ Contrast)
+gaussian <- function(x, A, mu, sigma){
+  A * exp(-(x - mu)^2 / (2 * sigma^2))
+}
 
-p3 <- ggplot(df_responses_augmented) + geom_col(aes(x = Neuron, y = Spikes), color = "grey34") +
-  theme_classic(base_size = 12) + 
-  ylim(0, 150) + ylab("Spikes")
+fit_gaussian <- function(data){
+  
+  nlsLM(
+    Spikes ~ gaussian(Neuron, A, mu, sigma),
+    data = data,
+    start = list(
+      A = max(data$Spikes),
+      mu = data$Neuron[which.max(data$Spikes)],
+      sigma = sd(data$Neuron)
+    )
+  )
+}
 
+(fit_high <- fit_gaussian(df_responses_high))
+(fit_low  <- fit_gaussian(df_responses_low))
+
+x_seq <- seq(min(df_responses$Neuron), max(df_responses$Neuron), length.out = 200)
+
+pred_high <- data.frame(
+  Neuron = x_seq,
+  Spikes = predict(fit_high, newdata = data.frame(Neuron = x_seq))
+)
+
+pred_low <- data.frame(
+  Neuron = x_seq,
+  Spikes = predict(fit_low, newdata = data.frame(Neuron = x_seq))
+)
+
+ggplot(df_responses_high, aes(x = Neuron, y = Spikes)) +
+  geom_point(size = 2) +
+  geom_line(data = pred_high, aes(x = Neuron, y = Spikes),
+            color = "red", linewidth = 1) +
+  ylim(0, 120) +
+  theme_classic()
+
+ggplot(df_responses_low, aes(x = Neuron, y = Spikes)) +
+  geom_point(size = 2) +
+  geom_line(data = pred_low, aes(x = Neuron, y = Spikes),
+            color = "red", linewidth = 1) +
+  ylim(0, 120) +
+  theme_classic()
+
+# μ推定のFisher information
+# uncertainty = σ/sqrt(A)
+# σはピーク高に依存しないのでAも必要
+ 
 
 
 
