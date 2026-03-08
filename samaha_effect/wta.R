@@ -58,9 +58,9 @@ colors <- color_wheel()
 n_neurons <- 180                                              
 orientations <- seq(1, 180, by = 1)                           
 preferred_orientations <-  seq(1, 180, length.out = n_neurons)
-max_firing_rate <- Rmax * 100^n / (100^n + C50^n) # 25% contrast
+max_firing_rate <- Rmax * 25^n / (25^n + C50^n) # 25% contrast
 tuning_width    <- 20                                         
-n_trials <- 20
+n_trials <- 3000
 
 tuning_curves <- matrix(0, nrow = n_neurons, ncol = length(orientations))
 for (i in 1:n_neurons) {
@@ -68,7 +68,7 @@ for (i in 1:n_neurons) {
                                                            180 - abs(orientations - preferred_orientations[i])) ^ 2) / tuning_width ^ 2)
 }
 
-input_orientation <- 100
+input_orientation <- 135
 responses_high    <- rpois(n_neurons, lambda = tuning_curves[, input_orientation])
 df_responses_high <- data.frame(Spikes = responses_high, Neuron = seq(1:n_neurons))
 
@@ -94,40 +94,40 @@ g2 <- ggplot(df_tuning[df_tuning$Neuron %in% seq(1, n_neurons, by = 18), ],
     hjust = 0.5,         
     size = 3.5             
   ) +
-  theme_classic(base_size = 12) + 
+  theme_classic(base_size = 11) + 
   scale_x_continuous(breaks = c(0, 60, 120, 180)) +
   coord_cartesian(ylim = c(0, 130)) +
   scale_y_continuous(breaks = seq(0, 120, by = 30)) +
   guides(color = F) + ylab("Spikes")
 g2
 
-input_90 <- rnorm(n_trials, 90, 0) # zero stimulus encoding noise
-responses_90 <- foreach(
+input_45 <- rnorm(n_trials, 45, 0) # zero stimulus encoding noise
+responses_45 <- foreach(
   i = 1:n_trials,
   .combine = rbind,
   .packages = "stats"
 ) %dopar% {
-  idx <- round(input_90[i]) 
+  idx <- round(input_45[i]) 
   mu <- tuning_curves[, idx]
   mu[mu == 0] <- 1e-8
   resp <- rnbinom(n_neurons, size = 1000000, mu = mu)
-  cbind(resp, neuron = seq_len(n_neurons), stim = 90, trial = i)
+  cbind(resp, neuron = seq_len(n_neurons), stim = 45, trial = i)
 }
 
-input_100 <- rnorm(n_trials, 100, 0)
-responses_100 <- foreach(
+input_135 <- rnorm(n_trials, 135, 0)
+responses_135 <- foreach(
   i = 1:n_trials,
   .combine = rbind,
   .packages = "stats"
 ) %dopar% {
-  idx <- round(input_100[i]) 
+  idx <- round(input_135[i]) 
   mu <- tuning_curves[, idx]
   mu[mu == 0] <- 1e-8
   resp <- rnbinom(n_neurons, size = 1000000, mu = mu)
-  cbind(resp, neuron = seq_len(n_neurons), stim = 100, trial = i)
+  cbind(resp, neuron = seq_len(n_neurons), stim = 135, trial = i)
 }
 
-df_responses_1 <- as.data.frame(rbind(responses_90, responses_100))
+df_responses_1 <- as.data.frame(rbind(responses_45, responses_135))
 colnames(df_responses_1) <- c("Spikes", "Neuron", "Stimulus", "Trial")
 
 # Low contrast
@@ -143,7 +143,7 @@ for (i in 1:n_neurons) {
                                                            180 - abs(orientations - preferred_orientations[i])) ^ 2) / tuning_width ^ 2)
 }
 
-input_orientation <- 100
+input_orientation <- 135
 responses_low    <- rpois(n_neurons, lambda = tuning_curves[, input_orientation])
 df_responses_low <- data.frame(Spikes = responses_low, Neuron = seq(1:n_neurons))
 
@@ -169,45 +169,46 @@ g3 <- ggplot(df_tuning[df_tuning$Neuron %in% seq(1, n_neurons, by = 18), ],
     hjust = 0.5,         
     size = 3.5             
   ) +
-  theme_classic(base_size = 12) + 
+  theme_classic(base_size = 11) + 
   scale_x_continuous(breaks = c(0, 60, 120, 180)) +
-    coord_cartesian(ylim = c(0, 130)) +
-    scale_y_continuous(breaks = seq(0, 120, by = 30)) +
+  coord_cartesian(ylim = c(0, 130)) +
+  scale_y_continuous(breaks = seq(0, 120, by = 30)) +
   guides(color = F) + ylab("Spikes")
 g3
 
-input_90 <- rnorm(n_trials, 90, 0) # zero stimulus encoding noise
-responses_90 <- foreach(
+input_45 <- rnorm(n_trials, 45, 0) # zero stimulus encoding noise
+responses_45 <- foreach(
   i = 1:n_trials,
   .combine = rbind,
   .packages = "stats"
 ) %dopar% {
-  idx <- round(input_90[i]) 
+  idx <- round(input_45[i]) 
   mu <- tuning_curves[, idx]
   mu[mu == 0] <- 1e-8
   resp <- rnbinom(n_neurons, size = 1000000, mu = mu)
-  cbind(resp, neuron = seq_len(n_neurons), stim = 90, trial = i)
+  cbind(resp, neuron = seq_len(n_neurons), stim = 45, trial = i)
 }
 
-input_100 <- rnorm(n_trials, 100, 0)
-responses_100 <- foreach(
+input_135 <- rnorm(n_trials, 135, 0)
+responses_135 <- foreach(
   i = 1:n_trials,
   .combine = rbind,
   .packages = "stats"
 ) %dopar% {
-  idx <- round(input_100[i]) 
+  idx <- round(input_135[i]) 
   mu <- tuning_curves[, idx]
   mu[mu == 0] <- 1e-8
   resp <- rnbinom(n_neurons, size = 1000000, mu = mu)
-  cbind(resp, neuron = seq_len(n_neurons), stim = 100, trial = i)
+  cbind(resp, neuron = seq_len(n_neurons), stim = 135, trial = i)
 }
 
-df_responses_2 <- as.data.frame(rbind(responses_90, responses_100))
+df_responses_2 <- as.data.frame(rbind(responses_45, responses_135))
 colnames(df_responses_2) <- c("Spikes", "Neuron", "Stimulus", "Trial")
 
 # stopCluster(cl)
 
 ### Visualization ###
+# within-trial spike distributions
 df_responses_high$Contrast <- "high"
 df_responses_low$Contrast  <- "low"
 df_responses <- rbind(df_responses_high, df_responses_low)
@@ -231,96 +232,114 @@ fit_gaussian <- function(data){
 
 (fit_high <- fit_gaussian(df_responses_high))
 (fit_low  <- fit_gaussian(df_responses_low))
+(curvature_high <- summary(fit_high)$parameters[1]/summary(fit_high)$parameters[3]^2) # peak curvature
+(curvature_low  <- summary(fit_low)$parameters[1]/summary(fit_low)$parameters[3]^2)
 
 x_seq <- seq(min(df_responses$Neuron), max(df_responses$Neuron), length.out = 200)
-
 pred_high <- data.frame(
   Neuron = x_seq,
   Spikes = predict(fit_high, newdata = data.frame(Neuron = x_seq))
 )
-
 pred_low <- data.frame(
   Neuron = x_seq,
   Spikes = predict(fit_low, newdata = data.frame(Neuron = x_seq))
 )
 
-ggplot(df_responses_high, aes(x = Neuron, y = Spikes)) +
-  geom_point(size = 2) +
+g4 <- ggplot(df_responses_high, aes(x = Neuron, y = Spikes)) +
+  geom_point(size = 0.7, color = "grey") +
   geom_line(data = pred_high, aes(x = Neuron, y = Spikes),
-            color = "red", linewidth = 1) +
-  ylim(0, 120) +
-  theme_classic()
+            color = "#E41A1C", linewidth = 1) +
+  annotate(
+    "text", 
+    x = 90,              
+    y = 135,             
+    label = paste0("Peak curvature: ", round(curvature_high, 2)), 
+    vjust = 1,           
+    hjust = 0.5,         
+    size = 3.5             
+  ) +
+  theme_classic(base_size = 11) + 
+  scale_x_continuous(breaks = c(0, 60, 120, 180)) +
+  coord_cartesian(ylim = c(0, 130)) +
+  scale_y_continuous(breaks = seq(0, 120, by = 30))
 
-ggplot(df_responses_low, aes(x = Neuron, y = Spikes)) +
-  geom_point(size = 2) +
+g5 <- ggplot(df_responses_low, aes(x = Neuron, y = Spikes)) +
+  geom_point(size = 0.7, color = "grey") +
   geom_line(data = pred_low, aes(x = Neuron, y = Spikes),
-            color = "red", linewidth = 1) +
-  ylim(0, 120) +
-  theme_classic()
+            color = "#1f78b4", linewidth = 1) +
+  annotate(
+    "text", 
+    x = 90,              
+    y = 135,             
+    label = paste0("Peak curvature: ", round(curvature_low, 2)), 
+    vjust = 1,           
+    hjust = 0.5,         
+    size = 3.5             
+  ) +
+  theme_classic(base_size = 11) + 
+  scale_x_continuous(breaks = c(0, 60, 120, 180)) +
+  coord_cartesian(ylim = c(0, 130)) +
+  scale_y_continuous(breaks = seq(0, 120, by = 30))
 
-# μ推定のFisher information
-# uncertainty = σ/sqrt(A)
-# σはピーク高に依存しないのでAも必要
- 
-
-
-
-df_responses_1$Contrast <- "100"
-df_responses_2$Contrast <- "20"
+# across-trial spike distributions
+# 2d density
+df_responses_1$Contrast <- "high"
+df_responses_2$Contrast <- "low"
 df <- rbind(df_responses_1, df_responses_2)
 
-df %>%
-  group_by(Stimulus, Contrast, Trial) %>%
-  summarise(Sum_spikes = sum(Spikes), .groups = "drop") -> df_sum
-
-df_sum %>%
-  group_by(Stimulus, Contrast) %>%
-  summarise(Mean_sum_spikes = mean(Sum_spikes),
-            SD_sum_spikes = sd(Sum_spikes), .groups = "drop")
-
-g4 <- ggplot(df_sum, aes(x = Sum_spikes, color = Contrast, fill = Contrast)) +
-  geom_density(alpha = 0.2, linewidth = 1) +
-  theme_classic() +
-  labs(
-    x = "Sum of spikes",
-    y = "Density",
-    color = "Contrast",
-    fill = "Contrast")
-g4
-
-g5 <- df %>%
-  filter(Neuron %in% c(90, 100)) %>%
+g6 <- df %>%
+  dplyr::filter(Neuron %in% c(45, 135)) %>%
   pivot_wider(names_from = Neuron, values_from = Spikes) %>%
-  ggplot(aes(x = `90`, y = `100`,
+  ggplot(aes(x = `45`, y = `135`,
              color = Contrast)) +
   stat_ellipse(aes(group = interaction(Contrast, Stimulus)), level = c(0.5)) + # parametric density
   stat_ellipse(aes(group = interaction(Contrast, Stimulus)), level = c(0.7)) + 
   stat_ellipse(aes(group = interaction(Contrast, Stimulus)), level = c(0.9)) + 
-  labs(x = "Neuron 90", y = "Neuron 100") +
-  coord_cartesian(xlim = c(0,150), ylim = c(0,150)) +
-  scale_color_manual(values = c("#2C2C7A", "#E69F00")) +
-  theme_classic() +
+  labs(x = "Neuron 45", y = "Neuron 135") +
+  coord_cartesian(xlim = c(0, 150), ylim = c(0, 150)) +
+  scale_color_manual(values = c("#E41A1C", "#377EB8")) +
+  theme_classic(base_size = 11) +
   theme(
-    legend.position = c(0.4, 1),
+    legend.position = c(0.3, 1),
     legend.justification = c(1, 1)
   )
 
-g6 <- df %>%
-  filter(Neuron %in% c(90, 100)) %>%
+g7 <- df %>%
+  filter(Neuron %in% c(45, 135)) %>%
   pivot_wider(names_from = Neuron, values_from = Spikes) %>%
-  ggplot(aes(x = `90`, y = `100`, color = Contrast)) +
-  geom_density_2d(aes(linetype = factor(Stimulus)), linewidth = 1) + # nonparametric density
-  labs(x = "Neuron 90", y = "Neuron 100",
+  ggplot(aes(x = `45`, y = `135`, color = Contrast)) +
+  geom_density_2d(aes(linetype = factor(Stimulus)), linewidth = 0.7) + # nonparametric density
+  labs(x = "Neuron 45", y = "Neuron 135",
        color = "Contrast", linetype = "Stimulus") +
   coord_cartesian(xlim = c(0, 150), ylim = c(0, 150)) +
-  scale_color_manual(values = c("#2C2C7A", "#E69F00")) +
-  theme_classic() +
+  scale_color_manual(values = c("#E41A1C", "#377EB8")) +
+  theme_classic(base_size = 11) +
   theme(
-    legend.position = c(0.4, 1),
+    legend.position = c(0.3, 1),
     legend.justification = c(1, 1)
   ) +
   theme(
-    legend.position = c(0.4, 1),
+    legend.position = c(0.3, 1),
+    legend.justification = c(1, 1)
+  )
+
+# sum of spikes
+g8 <- df %>%
+  group_by(Stimulus, Contrast, Trial) %>%
+  summarise(Sum_spikes = sum(Spikes), .groups = "drop") %>%
+  ggplot(aes(x = Sum_spikes, color = Contrast, fill = Contrast)) +
+  geom_density(alpha = 0.2, linewidth = 1) +
+  coord_cartesian(xlim = c(1000, 4000)) +
+  scale_x_continuous(breaks = c(1000, 2000, 3000, 4000)) +
+  scale_color_manual(values = c("#E41A1C", "#377EB8")) +
+  theme_classic(base_size = 11) +
+  labs(
+    x = "Total spikes",
+    y = "Density",
+    color = "Contrast",
+    fill = "Contrast") +
+  theme(
+    legend.position = c(0.3, 1),
     legend.justification = c(1, 1)
   )
 
@@ -333,13 +352,13 @@ z_sphere <- outer(rep(1,length(u)), cos(v))
 unit_sphere <- rbind(as.vector(x_sphere), as.vector(y_sphere), as.vector(z_sphere))
 
 df %>% 
-  filter(Neuron %in% c(80, 90, 100)) %>% 
+  filter(Neuron %in% c(45, 90, 135)) %>% 
   pivot_wider(id_cols = c(Contrast, Stimulus, Trial), 
               names_from = Neuron, values_from = Spikes) %>%
   group_by(Stimulus, Contrast) %>% 
   group_map(~{
-    mu <- colMeans(.x[,c("80","90","100")])
-    sigma <- cov(.x[,c("80","90","100")])
+    mu <- colMeans(.x[,c("45","90","135")])
+    sigma <- cov(.x[,c("45","90","135")])
     if(det(sigma) <= 0){
       sigma <- sigma + diag(1e-6,3)
     }
@@ -358,7 +377,7 @@ p1 <- plot_ly()
 
 for (e in ellipsoids) {
   
-  col <- ifelse(e$Contrast == 20, "Reds", "Blues")  # Contrastで色分け
+  col <- ifelse(e$Contrast == 25, "Reds", "Blues")
   
   p1 <- p1 %>% add_surface(
     x = e$x,
@@ -377,16 +396,16 @@ for (e in ellipsoids) {
 p1 <- p1 %>%
   layout(
     scene = list(
-      xaxis = list(title = "Neuron 80", range = c(0,100)),
+      xaxis = list(title = "Neuron 45", range = c(0,100)),
       yaxis = list(title = "Neuron 90", range = c(0,100)),
-      zaxis = list(title = "Neuron 100", range = c(0,100))
+      zaxis = list(title = "Neuron 135", range = c(0,100))
     )
   )
 p1
 
 # 3d scatter plot
 df %>% 
-  filter(Neuron %in% c(80, 90, 100)) %>% 
+  filter(Neuron %in% c(45, 90, 135)) %>% 
   pivot_wider(id_cols = c(Contrast, Stimulus, Trial), 
               names_from = Neuron, values_from = Spikes) -> df_scatter
 
@@ -401,9 +420,9 @@ for (i in seq_along(stim_list)) {
   d <- df_scatter %>% filter(Stimulus == stim_list[i])
   p2 <- p2 %>% add_trace(
     data = d,
-    x = ~`80`,
+    x = ~`45`,
     y = ~`90`,
-    z = ~`100`,
+    z = ~`135`,
     type = "scatter3d",
     mode = "markers",
     marker = list(
@@ -419,9 +438,9 @@ for (i in seq_along(stim_list)) {
 p2 <- p2 %>%
   layout(
     scene = list(
-      xaxis = list(title = "Neuron 80", range = c(0,100)),
+      xaxis = list(title = "Neuron 45", range = c(0,100)),
       yaxis = list(title = "Neuron 90", range = c(0,100)),
-      zaxis = list(title = "Neuron 100", range = c(0,100))
+      zaxis = list(title = "Neuron 135", range = c(0,100))
     )
   )
 
@@ -429,7 +448,7 @@ p2 <- p2 %>%
   layout(
     scene = list(
       xaxis = list(
-        title = "Neuron 80",
+        title = "Neuron 45",
         range = c(0,100),
         color = "black", 
         tickcolor = "black",
@@ -443,7 +462,7 @@ p2 <- p2 %>%
         titlefont = list(color = "black")
       ),
       zaxis = list(
-        title = "Neuron 100",
+        title = "Neuron 135",
         range = c(0,100),
         color = "black",
         tickcolor = "black",
@@ -454,7 +473,7 @@ p2 <- p2 %>%
 
 p2
 
-# logistic regression
+# 3d scatter plot with logistic regression
 contrast_list <- unique(df_scatter$Contrast)
 planes <- list()
 
@@ -462,7 +481,7 @@ for (c in contrast_list) {
   d <- df_scatter %>% 
     filter(Contrast == c)
   d$stim_bin <- as.numeric(as.factor(d$Stimulus)) - 1
-  fit <- glm(stim_bin ~ `80` + `90` + `100`,
+  fit <- glm(stim_bin ~ `45` + `90` + `135`,
              data = d,
              family = binomial)
   b <- coef(fit)
@@ -492,16 +511,25 @@ for (c in contrast_list) {
 p3
 
 # save figures
-plot_list <- list(g1, g2, g3)
-plots_no_legend <- lapply(plot_list, function(p) {
+plot_list_1 <- list(g1, g3, g2)
+plots_no_legend_1 <- lapply(plot_list_1, function(p) {
   p + theme(
     legend.position = "none",
     plot.margin = margin(t = 5, r = 5, b = 5, l = 5, unit = "pt")
   )
 })
+ps_1 <- wrap_plots(plots_no_legend_1, ncol = 3)
+ggsave("ps_1.png", ps_1, width = 6, height = 2, dpi = 300)
 
-ps <- wrap_plots(plots_no_legend, ncol = 3)
-ggsave("ps.png", ps, width = 6, height = 2, dpi = 300)
+plot_list_2 <- list(g5, g4, g8)
+plots_no_legend_2 <- lapply(plot_list_2, function(p) {
+  p + theme(
+    legend.position = "none",
+    plot.margin = margin(t = 5, r = 5, b = 5, l = 5, unit = "pt")
+  )
+})
+ps_2 <- wrap_plots(plots_no_legend_2, ncol = 3)
+ggsave("ps_2.png", ps_2, width = 6, height = 2, dpi = 300)
 
 htmlwidgets::saveWidget(p2, "scatter_3d.html")
 htmlwidgets::saveWidget(p3, "scatter_3d_logistic.html")
