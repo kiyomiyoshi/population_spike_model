@@ -502,6 +502,21 @@ g3 <- g3 + annotation_custom(
   ymin = 0.01, ymax = 0.03
 )
 
+legends_list <- get_plot_component(
+  g3 + theme(
+    legend.position = "bottom",   
+    legend.direction = "horizontal"
+  ),
+  "guide-box",
+  return_all = TRUE
+)
+
+legend_contrast <- legends_list[[3]]
+
+png("legend_contrast.png", width = 800, height = 200, res = 300)
+grid::grid.draw(legend_contrast)
+dev.off()
+
 df_sub <- subset(df_sum, Contrast %in% c(1, 4) & Attention == "low")
 df_sub$Contrast <- factor(df_sub$Contrast, levels = c(1, 4))
 
@@ -566,6 +581,14 @@ g5 <- ggplot(df_summary, aes(x = Contrast, y = DeltaC_pred, color = Attention)) 
     legend.justification = c(1, 1),
     legend.key = element_blank()
   )
+
+legend_attention <- get_legend(
+  g5 + theme(legend.position = "right")
+)
+
+png("legend_attealpha.png", width = 600, height = 400, res = 300)
+grid::grid.draw(legend_attention)
+dev.off()
 
 g6 <- ggplot(df_summary, aes(x = Contrast, y = Weber_ratio_pred, color = Attention)) +
   geom_point(size = 2.2, alpha = 0.85) +

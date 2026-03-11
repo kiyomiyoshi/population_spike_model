@@ -502,6 +502,14 @@ g3 <- g3 + annotation_custom(
   ymin = 0.01, ymax = 0.03
 )
 
+legend_contrast <- get_legend(
+  g3 + theme(legend.position = "right")
+)
+
+png("legend_contrast.png", width = 600, height = 400, res = 300)
+grid::grid.draw(legend_contrast)
+dev.off()
+
 df_sub <- subset(df_sum, Contrast %in% c(55, 70) & Alpha == "low")
 df_sub$Contrast <- factor(df_sub$Contrast, levels = c(55, 70))
 
@@ -566,6 +574,14 @@ g5 <- ggplot(df_summary, aes(x = Contrast, y = DeltaC_pred, color = Alpha)) +
     legend.justification = c(1, 1),
     legend.key = element_blank()
   )
+
+legend_alpha <- get_legend(
+  g5 + theme(legend.position = "right")
+)
+
+png("legend_alpha.png", width = 600, height = 400, res = 300)
+grid::grid.draw(legend_alpha)
+dev.off()
 
 g6 <- ggplot(df_summary, aes(x = Contrast, y = Weber_ratio_pred, color = Alpha)) +
   geom_point(size = 2.2, alpha = 0.85) +
