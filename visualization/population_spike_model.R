@@ -164,7 +164,7 @@ g3 <- ggplot(df_tuning[df_tuning$Neuron %in% seq(1, n_neurons, by = 18), ],
     "text", 
     x = 90,              
     y = 135,             
-    label = "Contrast = 10%", 
+    label = "Contrast = 15%", 
     vjust = 1,           
     hjust = 0.5,         
     size = 3.5             
