@@ -306,11 +306,11 @@ df %>%
 
 
 # save figures
-plot_list <- list(g3, g4, g5, g6)
+plot_list <- list(g3, g4, g5, g6, g7)
 plots <- lapply(plot_list, function(p) {
   p + theme(
     plot.margin = margin(t = 5, r = 5, b = 5, l = 5, unit = "pt")
   )
 })
-pc <- wrap_plots(plots, ncol = 4)
-ggsave("pairwise_correlation.png", pc, width = 9, height = 2.5, dpi = 300)
+pc <- wrap_plots(plots, nrow = 1)
+ggsave("pairwise_correlation.png", pc, width = 11.25, height = 2.5, dpi = 300)
