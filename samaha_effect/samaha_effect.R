@@ -7,7 +7,7 @@ library(cowplot)
 library(patchwork)
 
 #################### High Alpha ####################
-Contrast <- c(1, 4, seq(10, 100, 15))
+Contrast <- c(1, 4, seq(10, 85, 15))
 Rmax <- 115
 C50 <- 19.3
 n   <-  2.9
@@ -232,7 +232,7 @@ decoding_results_high <- mutate(decoding_results_high, D_prime = qnorm(Decoding_
 
 
 #################### Low Alpha ####################
-Contrast <- c(1, 4, seq(10, 100, 15))
+Contrast <- c(1, 4, seq(10, 85, 15))
 Rmax <- 115
 C50 <- 19.3
 n   <-  2.9
@@ -658,7 +658,7 @@ g9 <- decoding_results %>%
     breaks = c(0, 25, 50, 75, 100)
   ) +
   scale_y_continuous(
-    limits = c(0, 4),
+    limits = c(-0.1, 4),
     breaks = seq(0, 4, by = 1)
   ) +
   scale_color_manual(values = c("#2C2C7A", "#E69F00")) +
@@ -681,7 +681,7 @@ g10 <- decoding_results %>%
     breaks = c(1, 3, 10, 30, 100)
   ) +
   scale_y_continuous(
-    limits = c(0, 4),
+    limits = c(-0.1, 4),
     breaks = seq(0, 4, by = 1)
   ) +
   scale_color_manual(values = c("#2C2C7A", "#E69F00")) +
