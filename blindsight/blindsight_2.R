@@ -6,14 +6,14 @@ library(foreach)
 library(cowplot)
 library(patchwork)
 
-#################### High Alpha ####################
+#################### High Gain Variability ####################
 Contrast <- c(1, 4, seq(10, 55, 15))
-Rmax <- 115
+Rmax <- 115 / 2 # signal attenuated
 C50 <- 19.3
 n   <-  2.9
 R0 <- Rmax * 0.03 # spontaneous firing based on Geisler & Albrecht (1997)
 
-Max_firing <- Rmax * Contrast^n / (Contrast^n + C50^n)
+Max_firing <- Rmax * Contrast^n / (Contrast^n + C50^n) 
 df <- data.frame(Contrast, Max_firing)
 
 ### Simulation ###
@@ -56,7 +56,10 @@ for (max_firing_rate in max_firing_seq) {
     idx <- round(input_90[i]) 
     idx <- pmin(pmax(idx, 1), 180)
     
-    mu <- tuning_curves[, idx]
+    sigma_g <- 0.2
+    g <- rgamma(1, shape = 1 / sigma_g^2, scale = sigma_g^2)
+    
+    mu <- g * tuning_curves[, idx]
     mu[mu == 0] <- 1e-8
     
     resp <- rnbinom(n_neurons, size = 1000000, mu = mu) + rnbinom(n_neurons, size = 1000000, mu = R0)
@@ -79,7 +82,10 @@ for (max_firing_rate in max_firing_seq) {
     idx <- round(input_91[i]) 
     idx <- pmin(pmax(idx, 1), 180)
     
-    mu <- tuning_curves[, idx]
+    sigma_g <- 0.2
+    g <- rgamma(1, shape = 1 / sigma_g^2, scale = sigma_g^2)
+    
+    mu <- g * tuning_curves[, idx]
     mu[mu == 0] <- 1e-8
     
     resp <- rnbinom(n_neurons, size = 1000000, mu = mu) + rnbinom(n_neurons, size = 1000000, mu = R0)
@@ -231,12 +237,12 @@ decoding_results_high <- mutate(decoding_results_high, D_prime = qnorm(Decoding_
                                 Contrast = contrast)
 
 
-#################### Low Alpha ####################
+#################### Low Gain Variability ####################
 Contrast <- c(1, 4, seq(10, 55, 15))
 Rmax <- 115
 C50 <- 19.3
 n   <-  2.9
-R0 <- Rmax * 0.04
+R0 <- Rmax * 0.03
 
 Max_firing <- Rmax * Contrast^n / (Contrast^n + C50^n)
 df <- data.frame(Contrast, Max_firing)
@@ -281,7 +287,10 @@ for (max_firing_rate in max_firing_seq) {
     idx <- round(input_90[i]) 
     idx <- pmin(pmax(idx, 1), 180)
     
-    mu <- tuning_curves[, idx]
+    sigma_g <- 0.01
+    g <- rgamma(1, shape = 1 / sigma_g^2, scale = sigma_g^2)
+    
+    mu <- g * tuning_curves[, idx]
     mu[mu == 0] <- 1e-8
     
     resp <- rnbinom(n_neurons, size = 1000000, mu = mu) + rnbinom(n_neurons, size = 1000000, mu = R0)
@@ -304,7 +313,10 @@ for (max_firing_rate in max_firing_seq) {
     idx <- round(input_91[i]) 
     idx <- pmin(pmax(idx, 1), 180)
     
-    mu <- tuning_curves[, idx]
+    sigma_g <- 0.01
+    g <- rgamma(1, shape = 1 / sigma_g^2, scale = sigma_g^2)
+    
+    mu <- g * tuning_curves[, idx]
     mu[mu == 0] <- 1e-8
     
     resp <- rnbinom(n_neurons, size = 1000000, mu = mu) + rnbinom(n_neurons, size = 1000000, mu = R0)
@@ -394,12 +406,12 @@ decoding_results_low <- mutate(decoding_results_low, D_prime = qnorm(Decoding_ac
                                Contrast = contrast)
 
 ### Fano factor sanity check ### 
-df_high$Alpha <- "high"
-df_low$Alpha  <- "low"
+df_high$GV <- "high"
+df_low$GV  <- "low"
 df_integrated <- rbind(df_high, df_low) 
 
 df_integrated %>%
-  group_by(Contrast, Stimulus, Neuron, Alpha) %>%
+  group_by(Contrast, Stimulus, Neuron, GV) %>%
   summarise(
     mean_spikes = mean(Spikes),
     var_spikes  = var(Spikes),
@@ -407,7 +419,7 @@ df_integrated %>%
     .groups = "drop"
   ) %>%
   filter(mean_spikes > 0) %>%
-  group_by(Contrast, Stimulus, Alpha) %>%
+  group_by(Contrast, Stimulus, GV) %>%
   summarise(
     mean_mean_spikes = mean(mean_spikes, na.rm = TRUE),
     mean_var_spikes = mean(var_spikes),
@@ -415,10 +427,6 @@ df_integrated %>%
     sd_fano   = sd(fano, na.rm = TRUE),   # sd across neurons
     .groups = "drop") -> ff
 print(ff, n = 99999)
-
-# write.csv(df_integrated, 
-#          file = "samaha_effect_df_integrated.csv", 
-#          row.names = FALSE)
 
 ### Figures ###
 g1 <- ggplot(df, aes(x = Contrast, y = Max_firing)) +
@@ -449,24 +457,24 @@ g2 <- ggplot(df, aes(x = Contrast, y = Max_firing)) +
   ) +
   theme_classic(base_size = 11)
 
-df_sum_high$Alpha <- "high"
-df_sum_low$Alpha  <- "low"
+df_sum_high$GV <- "high"
+df_sum_low$GV  <- "low"
 df_sum <- rbind(df_sum_high, df_sum_low)
 df_sum %>%
-  dplyr::filter(Contrast == 55 | Contrast == 70) %>%
+  dplyr::filter(Contrast == 1 | Contrast == 10) %>%
   summarise(Criterion = mean(Sum_spikes)) %>%
   as.numeric() -> criterion
 
-default_colors <- scales::hue_pal()(9)
-first_two_colors <- default_colors[6:7]
+default_colors <- scales::hue_pal()(6)
+two_colors <- c(default_colors[1], default_colors[3])
 
-df_sub <- subset(df_sum, Contrast %in% c(55, 70) & Alpha == "high")
-df_sub$Contrast <- factor(df_sub$Contrast, levels = c(55, 70))
+df_sub <- subset(df_sum, Contrast %in% c(1, 10) & GV == "high")
+df_sub$Contrast <- factor(df_sub$Contrast, levels = c(1, 10))
 
 g_inset_high <- ggplot(df_sub, aes(x = Sum_spikes, color = factor(Contrast))) +
   geom_vline(xintercept = criterion, linetype = "dashed", linewidth = 0.3) +
   geom_density(alpha = 0.85, linewidth = 0.7) +
-  scale_x_continuous(limits = c(5800, 6800), breaks = c(5800, 6800)) +
+  scale_x_continuous(limits = c(0, 2000), breaks = c(0, 2000)) +
   scale_y_continuous(limits = c(0, 0.02), breaks = c(0, 0.01, 0.02)) + 
   theme_minimal(base_size = 11) +
   theme(
@@ -474,7 +482,7 @@ g_inset_high <- ggplot(df_sub, aes(x = Sum_spikes, color = factor(Contrast))) +
     axis.title = element_blank(),
     axis.text = element_text(size = 6)
   ) +
-  scale_color_manual(values = first_two_colors)
+  scale_color_manual(values = two_colors)
 
 g3 <- ggplot(df_sum_high, aes(x = Sum_spikes, color = factor(Contrast))) +
   geom_density(alpha = 0.85, linewidth = 1) +
@@ -493,7 +501,7 @@ g3 <- ggplot(df_sum_high, aes(x = Sum_spikes, color = factor(Contrast))) +
     legend.text = element_text(size = 6),
     legend.title = element_text(size = 8)
   ) +
-  ggtitle("High alpha:\nspontaneous firing = 3.45") +
+  ggtitle("High gain variability:\nsigma_g = 0.2") +
   theme(plot.title = element_text(size = 8.5, face = "bold", hjust = 0.5))
 
 g3 <- g3 + annotation_custom(
@@ -510,13 +518,13 @@ png("legend_contrast.png", width = 600, height = 400, res = 300)
 grid::grid.draw(legend_contrast)
 dev.off()
 
-df_sub <- subset(df_sum, Contrast %in% c(55, 70) & Alpha == "low")
-df_sub$Contrast <- factor(df_sub$Contrast, levels = c(55, 70))
+df_sub <- subset(df_sum, Contrast %in% c(1, 10) & GV == "low")
+df_sub$Contrast <- factor(df_sub$Contrast, levels = c(1, 10))
 
 g_inset_low <- ggplot(df_sub, aes(x = Sum_spikes, color = factor(Contrast))) +
   geom_vline(xintercept = criterion, linetype = "dashed", linewidth = 0.3) +
   geom_density(alpha = 0.85, linewidth = 0.7) +
-  scale_x_continuous(limits = c(5800, 6800), breaks = c(5800, 6800)) +
+  scale_x_continuous(limits = c(0, 2000), breaks = c(0, 2000)) +
   scale_y_continuous(limits = c(0, 0.02), breaks = c(0, 0.01, 0.02)) + 
   theme_minimal(base_size = 11) +
   theme(
@@ -524,7 +532,7 @@ g_inset_low <- ggplot(df_sub, aes(x = Sum_spikes, color = factor(Contrast))) +
     axis.title = element_blank(),
     axis.text = element_text(size = 6)
   ) +
-  scale_color_manual(values = first_two_colors)
+  scale_color_manual(values = two_colors)
 
 g4 <- ggplot(df_sum_low, aes(x = Sum_spikes, color = factor(Contrast))) +
   geom_density(alpha = 0.85, linewidth = 1) +
@@ -543,7 +551,7 @@ g4 <- ggplot(df_sum_low, aes(x = Sum_spikes, color = factor(Contrast))) +
     legend.text = element_text(size = 6),
     legend.title = element_text(size = 8)
   ) +
-  ggtitle("Low alpha:\nspontaneous firing = 4.60") +
+  ggtitle("Low gain variability:\nsigma_g = 0.01") +
   theme(plot.title = element_text(size = 8.5, face = "bold", hjust = 0.5))
 
 g4 <- g4 + annotation_custom(
@@ -552,11 +560,11 @@ g4 <- g4 + annotation_custom(
   ymin = 0.01, ymax = 0.03
 )
 
-df_summary_high$Alpha <- "high"
-df_summary_low$Alpha  <- "low"
+df_summary_high$GV <- "high"
+df_summary_low$GV  <- "low"
 df_summary <- rbind(df_summary_high, df_summary_low)
 
-g5 <- ggplot(df_summary, aes(x = Contrast, y = DeltaC_pred, color = Alpha)) +
+g5 <- ggplot(df_summary, aes(x = Contrast, y = DeltaC_pred, color = GV)) +
   geom_point(size = 2.2, alpha = 0.85) +
   scale_x_log10(
     limits = c(1, 100),
@@ -575,15 +583,15 @@ g5 <- ggplot(df_summary, aes(x = Contrast, y = DeltaC_pred, color = Alpha)) +
     legend.key = element_blank()
   )
 
-legend_alpha <- get_legend(
+legend_gv <- get_legend(
   g5 + theme(legend.position = "right")
 )
 
-png("legend_alpha.png", width = 600, height = 400, res = 300)
-grid::grid.draw(legend_alpha)
+png("legend_gv.png", width = 600, height = 400, res = 300)
+grid::grid.draw(legend_gv)
 dev.off()
 
-g6 <- ggplot(df_summary, aes(x = Contrast, y = Weber_ratio_pred, color = Alpha)) +
+g6 <- ggplot(df_summary, aes(x = Contrast, y = Weber_ratio_pred, color = GV)) +
   geom_point(size = 2.2, alpha = 0.85) +
   scale_x_continuous(
     limits = c(1, 100),
@@ -603,7 +611,7 @@ g6 <- ggplot(df_summary, aes(x = Contrast, y = Weber_ratio_pred, color = Alpha))
   )
 
 g7 <- df_summary %>%
-  ggplot(aes(x = Contrast, y = mu, color = Alpha)) +
+  ggplot(aes(x = Contrast, y = mu, color = GV)) +
   geom_point(size = 2.2, alpha = 0.85) +
   scale_x_continuous(
     limits = c(1, 100),
@@ -623,12 +631,12 @@ g7 <- df_summary %>%
     legend.key = element_blank()
   )
 
-lfi_results_high$Alpha <- "high"
-lfi_results_low$Alpha  <- "low"
+lfi_results_high$GV <- "high"
+lfi_results_low$GV  <- "low"
 lfi_results <- rbind(lfi_results_high, lfi_results_low)
 
 g8 <- lfi_results %>%
-  ggplot(aes(x = Contrast, y = LFI_per_neuron, color = Alpha)) +
+  ggplot(aes(x = Contrast, y = LFI_per_neuron, color = GV)) +
   geom_point(size = 2.2, alpha = 0.85) +
   scale_x_log10(
     limits = c(1, 100),
@@ -646,12 +654,12 @@ g8 <- lfi_results %>%
     legend.key = element_blank()
   )
 
-decoding_results_high$Alpha <- "high"
-decoding_results_low$Alpha  <- "low"
+decoding_results_high$GV <- "high"
+decoding_results_low$GV  <- "low"
 decoding_results <- rbind(decoding_results_high, decoding_results_low)
 
 g9 <- decoding_results %>%
-  ggplot(aes(x = Contrast, y = D_prime, color = Alpha)) +
+  ggplot(aes(x = Contrast, y = D_prime, color = GV)) +
   geom_point(size = 2.2, alpha = 0.85) +
   scale_x_continuous(
     limits = c(1, 100),
@@ -674,7 +682,7 @@ g9 <- decoding_results %>%
   )
 
 g10 <- decoding_results %>%
-  ggplot(aes(x = Contrast, y = D_prime, color = Alpha)) +
+  ggplot(aes(x = Contrast, y = D_prime, color = GV)) +
   geom_point(size = 2.2, alpha = 0.85) +
   scale_x_log10(
     limits = c(1, 100),
@@ -699,9 +707,9 @@ g10 <- decoding_results %>%
 g11 <- df_sum %>%
   dplyr::filter(Contrast == 1 | Contrast == 4) %>%
   mutate(Yes = Sum_spikes > criterion) %>%
-  group_by(Contrast, Alpha) %>%
+  group_by(Contrast, GV) %>%
   summarise(P_yes = mean(Yes)) %>%
-  ggplot(aes(x = Contrast, y = P_yes, color = Alpha)) +
+  ggplot(aes(x = Contrast, y = P_yes, color = GV)) +
   geom_point(size = 2.2, alpha = 0.85) +
   geom_line(alpha = 0.85, linewidth = 1) +
   scale_x_continuous(limits = c(1, 4), breaks = c(1, 4)) + 
@@ -726,5 +734,5 @@ plots_no_legend <- lapply(plot_list, function(p) {
   )
 })
 
-samaha_effect_final <- wrap_plots(plots_no_legend, ncol = 3)
-ggsave("samaha_effect.png", samaha_effect_final, width = 6, height = 4, dpi = 300)
+blindsight_2 <- wrap_plots(plots_no_legend, ncol = 3)
+ggsave("blindsight_2.png", blindsight_2, width = 6, height = 4, dpi = 300)

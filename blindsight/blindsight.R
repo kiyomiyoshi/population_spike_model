@@ -428,10 +428,6 @@ df_integrated %>%
     .groups = "drop") -> ff
 print(ff, n = 99999)
 
-# write.csv(df_integrated, 
-#          file = "samaha_effect_df_integrated.csv", 
-#          row.names = FALSE)
-
 ### Figures ###
 g1 <- ggplot(df, aes(x = Contrast, y = Max_firing)) +
   geom_point(size = 2.2, alpha = 0.85) +
@@ -470,7 +466,7 @@ df_sum %>%
   as.numeric() -> criterion
 
 default_colors <- scales::hue_pal()(9)
-first_two_colors <- default_colors[6:7]
+two_colors <- default_colors[6:7]
 
 df_sub <- subset(df_sum, Contrast %in% c(55, 70) & GV == "high")
 df_sub$Contrast <- factor(df_sub$Contrast, levels = c(55, 70))
@@ -486,7 +482,7 @@ g_inset_high <- ggplot(df_sub, aes(x = Sum_spikes, color = factor(Contrast))) +
     axis.title = element_blank(),
     axis.text = element_text(size = 6)
   ) +
-  scale_color_manual(values = first_two_colors)
+  scale_color_manual(values = two_colors)
 
 g3 <- ggplot(df_sum_high, aes(x = Sum_spikes, color = factor(Contrast))) +
   geom_density(alpha = 0.85, linewidth = 1) +
@@ -536,7 +532,7 @@ g_inset_low <- ggplot(df_sub, aes(x = Sum_spikes, color = factor(Contrast))) +
     axis.title = element_blank(),
     axis.text = element_text(size = 6)
   ) +
-  scale_color_manual(values = first_two_colors)
+  scale_color_manual(values = two_colors)
 
 g4 <- ggplot(df_sum_low, aes(x = Sum_spikes, color = factor(Contrast))) +
   geom_density(alpha = 0.85, linewidth = 1) +
@@ -738,5 +734,5 @@ plots_no_legend <- lapply(plot_list, function(p) {
   )
 })
 
-blindsight_final <- wrap_plots(plots_no_legend, ncol = 3)
-ggsave("blindsight.png", blindsight_final, width = 6, height = 4, dpi = 300)
+blindsight <- wrap_plots(plots_no_legend, ncol = 3)
+ggsave("blindsight.png", blindsight, width = 6, height = 4, dpi = 300)
