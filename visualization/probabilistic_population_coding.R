@@ -1,6 +1,7 @@
 library(tidyverse)
 library(cowplot)
 library(patchwork)
+library(ggpp)
 
 color_wheel <- function(alpha = 1) {
   h <- c(seq(160, 0, -1), seq(180, 161, -1))[-161]
@@ -37,9 +38,14 @@ df_tuning <- data.frame(Orientation = rep(orientations, n_neurons),
 p1 <- ggplot(df_tuning[df_tuning$Neuron %in% seq(1, n_neurons, by = 18), ], 
              aes(x = Orientation, y = FiringRate, color = Color)) +
   geom_line() + scale_color_identity() +
+  annotate("text_npc",
+           npcx = 0.5,
+           npcy = 1,
+           label = "Tuning curves", 
+           size = 3.5) +
   theme_classic(base_size = 12) + 
   scale_x_continuous(breaks = c(0, 60, 120, 180)) +
-  ylim(0, 120) + 
+  ylim(0, 160) + 
   guides(color = F) + ylab("Spikes")
 p1
 
@@ -54,11 +60,21 @@ df_responses_augmented <- data.frame(Spikes = responses_augmented, Neuron = seq(
 
 p2 <- ggplot(df_responses) + geom_col(aes(x = Neuron, y = Spikes), color = "grey34") +
   theme_classic(base_size = 12) + 
-  ylim(0, 150) + ylab("Spikes")
+  annotate("text_npc",
+           npcx = 0.5,
+           npcy = 1,
+           label = "Baseline excitability", 
+           size = 3.5) +
+  ylim(0, 160) + ylab("Spikes")
 
 p3 <- ggplot(df_responses_augmented) + geom_col(aes(x = Neuron, y = Spikes), color = "grey34") +
   theme_classic(base_size = 12) + 
-  ylim(0, 150) + ylab("Spikes")
+  annotate("text_npc",
+           npcx = 0.5,
+           npcy = 1,
+           label = "Elevated excitability", 
+           size = 3.5) +
+  ylim(0, 160) + ylab("Spikes")
 
 # Likelihood
 likelihood <- numeric(length(orientations))
@@ -100,20 +116,29 @@ cat("The maximum a posteriori (MAP) orientation is", map_orientation_augmented, 
 p4 <- ggplot(df_posterior, aes(x = Orientation, y = Density)) +
   geom_line() +
   labs(x = "Orientation", y = "Posterior density") +
+  annotate("text_npc",
+           npcx = 0.5,
+           npcy = 1,
+           label = "Bayesian inference", 
+           size = 3.5) +
   theme_classic(base_size = 12) + 
   coord_cartesian(xlim = c(85, 95)) +
   scale_x_continuous(breaks = c(85, 90, 95)) + 
-  ylim(0, 1) +
-  scale_y_continuous(limits = c(0, 1), breaks = c(0, 0.5, 1))
+  scale_y_continuous(limits = c(0, 1.1), breaks = c(0, 0.5, 1))
   
 
 p5 <- ggplot(df_posterior_augmented, aes(x = Orientation, y = Density)) +
   geom_line() +
   theme_classic(base_size = 12) + 
   labs(x = "Orientation", y = "Posterior density") +
+  annotate("text_npc",
+           npcx = 0.5,
+           npcy = 1,
+           label = "Posterior unchanged", 
+           size = 3.5) +
   coord_cartesian(xlim = c(85, 95)) +
   scale_x_continuous(breaks = c(85, 90, 95)) + 
-  scale_y_continuous(limits = c(0, 1), breaks = c(0, 0.5, 1))
+  scale_y_continuous(limits = c(0, 1.1), breaks = c(0, 0.5, 1))
 
 g1 <- list(p1, p2, p4, p3, p5)
 g1 <- lapply(g1, function(p) {

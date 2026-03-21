@@ -1,3 +1,5 @@
+# 2dプロットに最適判別面の線を引くことで、それらニューロンの寄与を可視化できるかも
+
 library(tidyverse)
 
 compute_lfi_decomposition <- function(data, lambda = 1e-6) {
@@ -5,18 +7,13 @@ compute_lfi_decomposition <- function(data, lambda = 1e-6) {
   neurons <- grep("^[0-9]+$", colnames(data), value = TRUE)
   p <- length(neurons)
   
-  # クラスごとのデータ抽出
   data0 <- data[data$Stimulus_bin == 0, neurons]
   data1 <- data[data$Stimulus_bin == 1, neurons]
   
-  # 平均の差 (Signal: df)
   df <- colMeans(data1) - colMeans(data0)
   
-  # 共通共分散行列 (Noise: Sigma)
   Sigma <- (cov(data0) + cov(data1)) / 2
   Sigma <- Sigma + lambda * diag(p) # 正則化
-  
-  # --- 分解の核となる計算 ---
   
   # 1. 最適なデコーディング重み w = Sigma^-1 * df
   # (これはロジスティック回帰の重みベクトルと数学的に等価な方向を指します)
@@ -26,18 +23,17 @@ compute_lfi_decomposition <- function(data, lambda = 1e-6) {
   # I = t(df) %*% w = sum(df * w) なので、各要素がその細胞の寄与分
   contribution <- as.numeric(df * w)
   
-  # 3. シャッフル（独立仮定）時の情報量
-  # 対角成分（分散）のみを取り出し、相関を0にする
+  # 3. 独立仮定時の情報量
+  # 対角成分のみを取り出し、相関を0にする
   Sigma_diag <- diag(diag(Sigma))
   w_shuffled <- solve(Sigma_diag) %*% df
   I_shuffled <- as.numeric(t(df) %*% w_shuffled)
   
-  # 結果をリストで返す
   return(list(
     total_I = sum(contribution),
-    neuron_contributions = contribution, # 100次元ベクトル
+    neuron_contributions = contribution,
     shuffled_I = I_shuffled,
-    correlation_gain = sum(contribution) / I_shuffled # 相関による情報の増減倍率(比)
+    correlation_gain = sum(contribution) / I_shuffled
   ))
 }
 

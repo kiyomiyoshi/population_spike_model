@@ -7,6 +7,7 @@ library(plotly)
 library(magick)
 library(webshot2)
 library(minpack.lm)
+library(ggpp)
 
 cl <- makeCluster(parallel::detectCores() - 1)
 registerDoParallel(cl)
@@ -343,6 +344,39 @@ g8 <- df %>%
       legend.justification = c(1, 1)
     )
 
+# Negative binomial distributions
+mu <- 37
+fano_factors <- c(1, 2)
+
+nb_data <- lapply(fano_factors, function(ff){
+  size <- ifelse(ff == 1, 10000, mu / (ff - 1))
+  x <- rnbinom(10000, size = size, mu = mu)
+  data.frame(spikes = x, Fano = paste0("Fano=", ff))
+}) %>% bind_rows()
+
+g9 <- ggplot(nb_data, aes(x = spikes, fill = Fano)) +
+  geom_histogram(aes(y = ..density..), bins = 18, alpha = 0.4, position = "identity", color = "black") +
+  annotate("text_npc",
+           npcx = 0.5,
+           npcy = 1,
+           label = "Negative binomial", 
+           size = 3.5) +
+  labs(x = "Spikes", y = "Density") +
+  theme_classic(base_size = 11) +
+  scale_fill_manual(values = c("Fano=1" = "#001f5b", "Fano=2" = "#ff6f61")) +
+  scale_color_manual(values = c("Fano=1" = "#001f5b", "Fano=2" = "#ff6f61")) +
+  coord_cartesian(xlim = c(10, 70)) +
+  scale_y_continuous(limits = c(0, 0.09), breaks = seq(0, 0.08, 0.02)) +
+  theme(
+    plot.title = element_text(face = "bold", hjust = 0.5),
+    legend.title = element_blank(),
+    legend.position = c(0.82, 0.73),
+    legend.text = element_text(size = 8),
+    legend.key.size = unit(0.5, "lines"),
+    panel.grid.minor = element_blank()
+  )
+g9
+
 # 3d density
 u <- seq(0, 2*pi, length.out = 50)
 v <- seq(0, pi, length.out = 50)
@@ -438,9 +472,10 @@ for (i in seq_along(stim_list)) {
 p2 <- p2 %>%
   layout(
     scene = list(
-      xaxis = list(title = "Neuron 80", range = c(0,100)),
-      yaxis = list(title = "Neuron 90", range = c(0,100)),
-      zaxis = list(title = "Neuron 100", range = c(0,100))
+      xaxis = list(title = "Neuron 80",  range = c(0,100)),
+      yaxis = list(title = "Neuron 90",  range = c(0,100)),
+      zaxis = list(title = "Neuron 100", range = c(0,100)),
+      aspectmode = "cube"   
     )
   )
 
@@ -474,7 +509,61 @@ p2 <- p2 %>%
 p2
 
 # 3d scatter plot with logistic regression
-contrast_list <- unique(df_scatter$Contrast)
+d <- df_scatter
+d$stim_bin <- as.numeric(as.factor(d$Stimulus)) - 1
+fit <- glm(stim_bin ~ `80` + `90` + `100`,
+           data = d,
+           family = binomial)
+b <- coef(fit)
+x_seq <- seq(0, 100, length.out = 300)
+y_seq <- seq(0, 100, length.out = 300)
+grid <- expand.grid(x = x_seq, y = y_seq)
+z <- -(b[1] + b[2]*grid$x + b[3]*grid$y) / b[4]
+z <- matrix(z, nrow = length(x_seq), ncol = length(y_seq))
+
+planes <- list(
+  x = x_seq,
+  y = y_seq,
+  z = z
+)
+
+p3 <- p2 %>% add_surface(
+  x = planes$x,
+  y = planes$y,
+  z = planes$z,
+  z[z < 0 | z > 100] <- NA,
+  opacity = 0.3,
+  showscale = FALSE,
+  name = "Decision plane",
+  surfacecolor = matrix(rep(0, length(planes$x)*length(planes$y)),
+                        nrow = length(planes$x),
+                        ncol = length(planes$y)),
+  colorscale = list(c(0, 1), c("gray70", "gray70"))
+)
+
+p3
+
+# visibility plane
+z2 <- outer(x_seq, y_seq, function(x, y) 150 - x - y)
+z2[z2 < 0 | z2 > 100] <- NA
+
+p4 <- p3 %>% add_surface(
+  x = x_seq,
+  y = y_seq,
+  z = z2,
+  opacity = 0.3,
+  showscale = FALSE,
+  name = "x+y+z=150 plane",
+  surfacecolor = matrix(rep(1, length(x_seq)*length(y_seq)),
+                        nrow = length(x_seq),
+                        ncol = length(y_seq)),
+  colorscale = list(c(0, 1), c("pink", "pink"))
+)
+
+p4
+
+# Condition-specific logistic regression
+contrast_list <- "high"
 planes <- list()
 
 for (c in contrast_list) {
@@ -485,8 +574,8 @@ for (c in contrast_list) {
              data = d,
              family = binomial)
   b <- coef(fit)
-  x_seq <- seq(0,100,length.out = 30)
-  y_seq <- seq(0,100,length.out = 30)
+  x_seq <- seq(0, 100, length.out = 30)
+  y_seq <- seq(0, 100, length.out = 30)
   grid <- expand.grid(x = x_seq, y = y_seq)
   z <- -(b[1] + b[2]*grid$x + b[3]*grid$y) / b[4]
   z <- matrix(z, nrow = length(x_seq), ncol = length(y_seq))
@@ -498,7 +587,7 @@ for (c in contrast_list) {
 }
 
 for (c in contrast_list) {
-  p3 <- p2 %>% add_surface(
+  p5 <- p2 %>% add_surface(
     x = planes[[as.character(c)]]$x,
     y = planes[[as.character(c)]]$y,
     z = planes[[as.character(c)]]$z,
@@ -508,28 +597,26 @@ for (c in contrast_list) {
   )
 }
 
-p3
+p5
+
 
 # save figures
-plot_list_1 <- list(g1, g3, g2)
-plots_no_legend_1 <- lapply(plot_list_1, function(p) {
-  p + theme(
-    legend.position = "none",
-    plot.margin = margin(t = 5, r = 5, b = 5, l = 5, unit = "pt")
-  )
+plot_list_1 <- list(g1, g9, g3, g2)
+plots_1 <- lapply(plot_list_1, function(p) {
+  p + theme(plot.margin = margin(t = 5, r = 5, b = 5, l = 5, unit = "pt"))
 })
-ps_1 <- wrap_plots(plots_no_legend_1, ncol = 3)
-ggsave("ps_1.png", ps_1, width = 6, height = 2, dpi = 300)
+ps_1 <- wrap_plots(plots_1, ncol = 2)
+ggsave("ps_1.png", ps_1, width = 4, height = 3.3, dpi = 300)
 
 plot_list_2 <- list(g5, g4, g8)
-plots_no_legend_2 <- lapply(plot_list_2, function(p) {
+plots_2 <- lapply(plot_list_2, function(p) {
   p + theme(
     legend.position = "none",
     plot.margin = margin(t = 5, r = 5, b = 5, l = 5, unit = "pt")
   )
 })
-ps_2 <- wrap_plots(plots_no_legend_2, ncol = 3)
+ps_2 <- wrap_plots(plots_2, ncol = 3)
 ggsave("ps_2.png", ps_2, width = 6, height = 2, dpi = 300)
 
 htmlwidgets::saveWidget(p2, "scatter_3d.html")
-htmlwidgets::saveWidget(p3, "scatter_3d_logistic.html")
+htmlwidgets::saveWidget(p4, "scatter_3d_logistic.html")

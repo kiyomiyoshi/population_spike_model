@@ -14,8 +14,8 @@ df <- tibble(
 labels <- c("―CW―", "―CCW―") 
 x_pos  <- c(-0.60, 1.38)
 
-color_1 <- "#E41A1C"
-color_2 <- "#377EB8"
+# color_1 <- "#E41A1C"
+# color_2 <- "#377EB8"
 
 p1 <- ggplot(df, aes(x = x, y = density, color = distribution)) +
   geom_segment(x =  0,   xend =  0,   y = 0, yend = 0.42, linetype = "solid",  color = "black",  size = 0.6) +
@@ -30,10 +30,10 @@ p1 <- ggplot(df, aes(x = x, y = density, color = distribution)) +
     x = x_pos,
     y = 1,
     label = labels) +
-  scale_color_manual(values = c("density_1" = color_1, "density_2" = color_2)) +
+# scale_color_manual(values = c("density_1" = color_1, "density_2" = color_2)) +
   scale_x_continuous(breaks = seq(-6, 6, by = 2), limits = c(-6, 6)) +
   scale_y_continuous(limits = c(0, 0.42)) +
-  labs(x = "Internal signal", y = "Density") +
+  labs(x = "Signal strength", y = "Density") +
   theme_classic(base_size = 11) +
   theme(legend.position = "none")
 
