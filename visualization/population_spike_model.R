@@ -464,7 +464,7 @@ for (i in seq_along(stim_list)) {
       symbol = symbols[i]
     ),
     color = ~factor(Contrast),
-    colors = colors,   # ←ここで指定
+    colors = colors,
     name = paste("Stimulus", stim_list[i])
   )
 }
@@ -472,9 +472,9 @@ for (i in seq_along(stim_list)) {
 p2 <- p2 %>%
   layout(
     scene = list(
-      xaxis = list(title = "Neuron 80",  range = c(0,100)),
-      yaxis = list(title = "Neuron 90",  range = c(0,100)),
-      zaxis = list(title = "Neuron 100", range = c(0,100)),
+      xaxis = list(title = "Neuron 80",  range = c(0, 100)),
+      yaxis = list(title = "Neuron 90",  range = c(0, 100)),
+      zaxis = list(title = "Neuron 100", range = c(0, 100)),
       aspectmode = "cube"   
     )
   )

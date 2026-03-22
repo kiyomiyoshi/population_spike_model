@@ -7,7 +7,7 @@ library(cowplot)
 library(patchwork)
 
 #################### High Gain Variability ####################
-Contrast <- c(5, 10, 20, 30)
+Contrast <- c(10, 20, 30, 40)
 Rmax <- 115
 C50 <- 19.3
 n   <-  2.9
@@ -238,7 +238,7 @@ decoding_results_high <- mutate(decoding_results_high, D_prime = qnorm(Decoding_
 
 
 #################### Low Gain Variability ####################
-Contrast <- c(5, 10, 20, 30)
+Contrast <- c(10, 20, 30, 40)
 Rmax <- 115
 C50 <- 19.3
 n   <-  2.9
@@ -457,17 +457,18 @@ cor_results <- df_integrated %>%
 
 ### Figures ###
 g0 <- cor_results %>%
-  ggplot() + geom_histogram(aes(x = Correlation, fill = GV)) +
-  facet_wrap(. ~ GV) +
+  ggplot() +
+  geom_histogram(aes(x = Correlation, fill = GV)) +
+  facet_wrap(. ~ Contrast) +
   theme_classic(base_size = 11) +
   coord_cartesian(xlim = c(0, 0.6)) +
   scale_x_continuous(breaks = c(0, 0.3, 0.6), labels = c("0", "0.3", "0.6")) +
   scale_fill_manual(values = c("#E41A1C", "#377EB8")) +
-  theme(legend.position = "none") +
   labs(
     x = "Pairwise spike correlation",
-    y = "Count") +
-  facet_wrap(. ~ Contrast)
+    y = "Count"
+  ) +
+  theme(legend.position = c(0.9, 0.8))
 g0
 
 g1 <- ggplot(df, aes(x = Contrast, y = Max_firing)) +
@@ -605,6 +606,10 @@ df_summary_high$GV <- "high"
 df_summary_low$GV  <- "low"
 df_summary <- rbind(df_summary_high, df_summary_low)
 
+df_summary_high$GV <- "high"
+df_summary_low$GV  <- "low"
+df_summary <- rbind(df_summary_high, df_summary_low)
+
 g5 <- ggplot(df_summary, aes(x = Contrast, y = DeltaC_pred, color = GV)) +
   geom_point(size = 2.2, alpha = 0.85) +
   scale_x_log10(
@@ -612,7 +617,7 @@ g5 <- ggplot(df_summary, aes(x = Contrast, y = DeltaC_pred, color = GV)) +
     breaks = c(1, 3, 10, 30, 100)
   ) +
   scale_y_log10(limits = c(0.2, 45)) +
-  scale_color_manual(values = c("#2C2C7A", "#E69F00")) +
+  scale_color_manual(values = c("#E41A1C", "#377EB8")) +
   labs(
     x = "Contrast (%)",
     y = "ΔC (JND of d' = 1)"
@@ -635,11 +640,11 @@ dev.off()
 g6 <- ggplot(df_summary, aes(x = Contrast, y = Weber_ratio_pred, color = GV)) +
   geom_point(size = 2.2, alpha = 0.85) +
   scale_x_continuous(
-    limits = c(1, 100),
-    breaks = c(0, 25, 50, 75, 100)
+    limits = c(1, 50),
+    breaks = seq(0, 50, 10)
   ) +
-  coord_cartesian(ylim = c(0, 2)) +
-  scale_color_manual(values = c("#2C2C7A", "#E69F00")) +
+  coord_cartesian(ylim = c(0, 0.6)) +
+  scale_color_manual(values = c("#E41A1C", "#377EB8")) +
   labs(
     x = "Contrast (%)",
     y = "ΔC/C (Weber fraction)"
@@ -658,9 +663,9 @@ g7 <- df_summary %>%
     limits = c(1, 100),
     breaks = c(0, 25, 50, 75, 100)
   ) +
-  coord_cartesian(ylim = c(0, 7500)) +
-  scale_y_continuous(breaks = seq(0, 7500, by = 2500)) +
-  scale_color_manual(values = c("#2C2C7A", "#E69F00")) +
+  coord_cartesian(ylim = c(0, 600)) +
+  scale_y_continuous(breaks = seq(0, 600, by = 200)) +
+  scale_color_manual(values = c("#E41A1C", "#377EB8")) +
   labs(
     x = "Contrast (%)",
     y = "Mean total spikes"
@@ -683,7 +688,7 @@ g8 <- lfi_results %>%
     limits = c(1, 100),
     breaks = c(1, 3, 10, 30, 100)
   ) +
-  scale_color_manual(values = c("#2C2C7A", "#E69F00")) +
+  scale_color_manual(values = c("#E41A1C", "#377EB8")) +
   labs(
     x = "Contrast (%)",
     y = "Orientation LFI"
@@ -710,7 +715,7 @@ g9 <- decoding_results %>%
     limits = c(-0.1, 4),
     breaks = seq(0, 4, by = 1)
   ) +
-  scale_color_manual(values = c("#2C2C7A", "#E69F00")) +
+  scale_color_manual(values = c("#E41A1C", "#377EB8")) +
   labs(
     x = "Contrast (%)",
     y = "Orientation d'"
@@ -733,7 +738,7 @@ g10 <- decoding_results %>%
     limits = c(-0.1, 4),
     breaks = seq(0, 4, by = 1)
   ) +
-  scale_color_manual(values = c("#2C2C7A", "#E69F00")) +
+  scale_color_manual(values = c("#E41A1C", "#377EB8")) +
   labs(
     x = "Contrast (%)",
     y = "Orientation d'"
@@ -743,28 +748,6 @@ g10 <- decoding_results %>%
     legend.position = c(0.4, 1),
     legend.justification = c(1, 1),
     legend.key = element_blank()
-  )
-
-g11 <- df_sum %>%
-  dplyr::filter(Contrast == 1 | Contrast == 4) %>%
-  mutate(Yes = Sum_spikes > criterion) %>%
-  group_by(Contrast, GV) %>%
-  summarise(P_yes = mean(Yes)) %>%
-  ggplot(aes(x = Contrast, y = P_yes, color = GV)) +
-  geom_point(size = 2.2, alpha = 0.85) +
-  geom_line(alpha = 0.85, linewidth = 1) +
-  scale_x_continuous(limits = c(1, 4), breaks = c(1, 4)) + 
-  scale_y_continuous(limits = c(0, 1), breaks = c(0, 0.25, 0.5, 0.75, 1)) + 
-  scale_color_manual(values = c("#2C2C7A", "#E69F00")) +
-  theme_classic() +
-  labs(
-    x = "Contrast (%)",
-    y = "P(Yes)",
-    color = "Contrast"
-  ) +
-  theme(
-    legend.position = c(0.4, 1),
-    legend.justification = c(1, 1)
   )
 
 plot_list <- list(g4, g3, g7, g5, g6, g10)
@@ -816,7 +799,7 @@ compute_lfi_decomposition <- function(data, lambda = 1e-6) {
   ))
 }
 
-maxFR_values <- c(5, 10, 20, 30)
+maxFR_values <- c(10, 20, 30, 40)
 figure_list <- list()
 
 for (i in 1:length(maxFR_values)) {
@@ -864,14 +847,24 @@ for (i in 1:length(maxFR_values)) {
     scale_color_manual(values = c("High" = "#E41A1C", "Low" = "#377EB8")) +
     theme_classic() +
     labs(
-      subtitle = paste("LFI:", round(lfi_high$total_I, 2), 
-                       " | CG:", round(lfi_high$correlation_gain, 2)),
       x = "Neuron ID (1 - 180)",
       y = "df * w",
       color = "Condition"
     ) +
+    annotate("text", x = 1, y = Inf, hjust = 0, vjust = 1,
+             label = paste0(
+               "LFI:", round(lfi_high$total_I, 2),
+               " | CG:", round(lfi_high$correlation_gain, 2)
+             ),
+             color = "#E41A1C", size = 4) +
+    annotate("text", x = 1, y = Inf, hjust = 0, vjust = 3,
+             label = paste0(
+               "LFI:", round(lfi_low$total_I, 2),
+               " | CG:", round(lfi_low$correlation_gain, 2)
+             ),
+             color = "#377EB8", size = 4) +
     scale_x_continuous(breaks = seq(0, 180, by = 30)) +
-    # scale_y_continuous(breaks = seq(0, 0.25, by = 0.05)) +
+    scale_y_continuous(expand = expansion(mult = c(0, 0.5))) +
     theme(legend.position = "top")
   
   combined_logistic <- data.frame(
@@ -890,14 +883,12 @@ for (i in 1:length(maxFR_values)) {
     scale_color_manual(values = c("High" = "#E41A1C", "Low" = "#377EB8")) +
     theme_classic() +
     labs(
-      subtitle = paste("LFI:", round(lfi_low$total_I, 2), 
-                       " | CG:", round(lfi_low$correlation_gain, 2)),
       x = "Neuron ID (1 - 180)",
       y = "Logistic weight",
       color = "Condition"
     ) +
     scale_x_continuous(breaks = seq(0, 180, by = 30)) +
-    # scale_y_continuous(breaks = seq(0, 0.25, by = 0.05)) +
+    scale_y_continuous(expand = expansion(mult = c(0, 0.5))) +
     theme(legend.position = "top")
   
   plot_list <- list(gg1, gg2)
@@ -916,3 +907,4 @@ for (i in 1:length(maxFR_values)) {
 final_plot <- wrap_plots(figure_list, nrow = 2, ncol = 2) +
   plot_annotation(title = "90 vs. 91")
 ggsave("lfi_90_91.png", final_plot, width = 9, height = 3.5, dpi = 300)
+ggsave("cor_90_91.png", g0, width = 3.5, height = 3.5, dpi = 300)
