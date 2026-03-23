@@ -12,14 +12,14 @@ n_neurons <- 2
 n_trials <- 1000
 
 # クラス平均 (2ニューロンの総和方向)
-mu1 <- c(1,1)
+mu1 <- c(1,4)
 mu2 <- c(-1,-1)
 
 # 共分散行列の例
 rho <- 0.2  # ノイズ相関
 sigma <- 1
 Sigma <- matrix(c(sigma^2, rho*sigma^2,
-                  rho*sigma^2, sigma^2), nrow=2)
+                  rho*sigma^2, sigma^2), nrow = 2)
 
 # データ生成
 library(MASS)
@@ -31,10 +31,10 @@ labels <- c(rep(1, n_trials), rep(2, n_trials))
 data <- rbind(class1, class2)
 
 # ======== 散布図 ========
-plot(data[,1], data[,2], col=ifelse(labels==1,"red","blue"),
-     pch=16, xlab="Neuron 1", ylab="Neuron 2",
-     main=paste("Scatter plot with rho =", rho))
-legend("topright", legend=c("Class 1", "Class 2"), col=c("red","blue"), pch=16)
+plot(data[,1], data[,2], col = ifelse(labels == 1,"red","blue"),
+     pch = 16, xlab = "Neuron 1", ylab = "Neuron 2",
+     main = paste("Scatter plot with rho =", rho))
+legend("topright", legend = c("Class 1", "Class 2"), col = c("red","blue"), pch = 16)
 
 # ======== 線形判別情報 (LFI) と d' ========
 # LFI = Δμ^T Σ^{-1} Δμ
