@@ -81,7 +81,7 @@ g2 <- ggplot() +
                color = "black", size = 1) +
   
   coord_fixed() +
-  labs(x = "Neuron 1", y = "Neuron 2", title = "Type-2 logistic Regression") +
+  labs(x = "Neuron 1", y = "Neuron 2", title = "Type-2 logistic regression") +
   theme_minimal() +
   theme(legend.position = "right")
 g2
