@@ -10,9 +10,9 @@ library(webshot2)
 library(minpack.lm)
 library(ggpp)
 
-set.seed(126)
+set.seed(124) # 124
 
-#################### High Alpha ####################
+#################### High Attention ####################
 Contrast <- 25
 Rmax <- 115
 C50 <- 19.3
@@ -32,7 +32,7 @@ preferred_orientations <- seq(1, 180, length.out = n_neurons) # Preferred orient
 max_firing_seq <- df$Max_firing                               # Maximum firing rate of each neuron
 contrast <- df$Contrast
 tuning_width <- 20                                            # Tuning width (standard deviation) of each neuron's response curve
-n_trials <- 20
+n_trials <- 30
 
 all_results <- list()
 
@@ -237,12 +237,12 @@ decoding_results_high <- mutate(decoding_results_high, D_prime = qnorm(Decoding_
                                 Contrast = contrast)
 
 
-#################### Low Alpha ####################
+#################### Low Attention ####################
 Contrast <- 25
 Rmax <- 115
 C50 <- 19.3
 n   <-  2.9
-R0 <- Rmax * 0.13
+R0 <- Rmax * 0.03
 
 Max_firing <- Rmax * Contrast^n / (Contrast^n + C50^n)
 df <- data.frame(Contrast, Max_firing)
@@ -257,7 +257,7 @@ preferred_orientations <- seq(1, 180, length.out = n_neurons) # Preferred orient
 max_firing_seq <- df$Max_firing                               # Maximum firing rate of each neuron
 contrast <- df$Contrast
 tuning_width <- 20                                            # Tuning width (standard deviation) of each neuron's response curve
-n_trials <- 20
+n_trials <- 30
 
 all_results <- list()
 
@@ -290,7 +290,7 @@ for (max_firing_rate in max_firing_seq) {
     mu <- tuning_curves[, idx]
     mu[mu == 0] <- 1e-8
     
-    resp <- rnbinom(n_neurons, size = 1000000, mu = mu) + rnbinom(n_neurons, size = 1000000, mu = R0)
+    resp <- rnbinom(n_neurons, size = mu, mu = mu) + rnbinom(n_neurons, size = R0, mu = R0)
     
     cbind(resp,
           neuron = seq_len(n_neurons),
@@ -313,7 +313,7 @@ for (max_firing_rate in max_firing_seq) {
     mu <- tuning_curves[, idx]
     mu[mu == 0] <- 1e-8
     
-    resp <- rnbinom(n_neurons, size = 1000000, mu = mu) + rnbinom(n_neurons, size = 1000000, mu = R0)
+    resp <- rnbinom(n_neurons, size = mu, mu = mu) + rnbinom(n_neurons, size = R0, mu = R0)
     
     cbind(resp,
           neuron = seq_len(n_neurons),
@@ -400,12 +400,12 @@ decoding_results_low <- mutate(decoding_results_low, D_prime = qnorm(Decoding_ac
                                Contrast = contrast)
 
 ### Fano factor sanity check ### 
-df_high$Alpha <- "high"
-df_low$Alpha  <- "low"
+df_high$Attention <- "high"
+df_low$Attention  <- "low"
 df_integrated <- rbind(df_high, df_low) 
 
 df_integrated %>%
-  group_by(Contrast, Stimulus, Neuron, Alpha) %>%
+  group_by(Contrast, Stimulus, Neuron, Attention) %>%
   summarise(
     mean_spikes = mean(Spikes),
     var_spikes  = var(Spikes),
@@ -413,7 +413,7 @@ df_integrated %>%
     .groups = "drop"
   ) %>%
   filter(mean_spikes > 0) %>%
-  group_by(Contrast, Stimulus, Alpha) %>%
+  group_by(Contrast, Stimulus, Attention) %>%
   summarise(
     mean_mean_spikes = mean(mean_spikes, na.rm = TRUE),
     mean_var_spikes = mean(var_spikes),
@@ -428,10 +428,10 @@ g1 <- df_integrated %>%
   dplyr::filter(Neuron %in% c(90, 100)) %>%
   pivot_wider(names_from = Neuron, values_from = Spikes) %>%
   ggplot(aes(x = `90`, y = `100`,
-             color = Alpha)) +
-  stat_ellipse(aes(group = interaction(Alpha, Stimulus)), level = c(0.5)) + # parametric density
-  stat_ellipse(aes(group = interaction(Alpha, Stimulus)), level = c(0.7)) + 
-  stat_ellipse(aes(group = interaction(Alpha, Stimulus)), level = c(0.9)) + 
+             color = Attention)) +
+  stat_ellipse(aes(group = interaction(Attention, Stimulus)), level = c(0.5)) + # parametric density
+  stat_ellipse(aes(group = interaction(Attention, Stimulus)), level = c(0.7)) + 
+  stat_ellipse(aes(group = interaction(Attention, Stimulus)), level = c(0.9)) + 
   labs(x = "Neuron 90", y = "Neuron 100") +
   coord_cartesian(xlim = c(0, 150), ylim = c(0, 150)) +
   scale_color_manual(values = c("#E41A1C", "#377EB8")) +
@@ -444,10 +444,10 @@ g1 <- df_integrated %>%
 g2 <- df_integrated %>%
   filter(Neuron %in% c(90, 100)) %>%
   pivot_wider(names_from = Neuron, values_from = Spikes) %>%
-  ggplot(aes(x = `90`, y = `100`, color = Alpha)) +
+  ggplot(aes(x = `90`, y = `100`, color = Attention)) +
   geom_density_2d(aes(linetype = factor(Stimulus)), linewidth = 0.7) + # nonparametric density
   labs(x = "Neuron 90", y = "Neuron 100",
-       color = "Alpha", linetype = "Stimulus") +
+       color = "Attention", linetype = "Stimulus") +
   coord_cartesian(xlim = c(0, 150), ylim = c(0, 150)) +
   scale_color_manual(values = c("#E41A1C", "#377EB8")) +
   theme_classic(base_size = 11) +
@@ -462,9 +462,9 @@ g2 <- df_integrated %>%
 
 # sum of spikes
 g3 <- df_integrated %>%
-  group_by(Stimulus, Alpha, Trial) %>%
+  group_by(Stimulus, Attention, Trial) %>%
   summarise(Sum_spikes = sum(Spikes), .groups = "drop") %>%
-  ggplot(aes(x = Sum_spikes, color = Alpha, fill = Alpha)) +
+  ggplot(aes(x = Sum_spikes, color = Attention, fill = Attention)) +
   geom_density(alpha = 0.2, linewidth = 1) +
   coord_cartesian(xlim = c(4000, 7000)) +
   scale_x_continuous(breaks = c(4000, 5000, 6000, 7000)) +
@@ -473,8 +473,8 @@ g3 <- df_integrated %>%
   labs(
     x = "Total spikes",
     y = "Density",
-    color = "Alpha",
-    fill = "Alpha") +
+    color = "Attention",
+    fill = "Attention") +
   theme(
     legend.position = c(0.15, 1),
     legend.justification = c(1, 1)
@@ -490,9 +490,9 @@ unit_sphere <- rbind(as.vector(x_sphere), as.vector(y_sphere), as.vector(z_spher
 
 df_integrated %>% 
   filter(Neuron %in% c(80, 90, 100)) %>% 
-  pivot_wider(id_cols = c(Alpha, Stimulus, Trial), 
+  pivot_wider(id_cols = c(Attention, Stimulus, Trial), 
               names_from = Neuron, values_from = Spikes) %>%
-  group_by(Stimulus, Alpha) %>% 
+  group_by(Stimulus, Attention) %>% 
   group_map(~{
     mu <- colMeans(.x[,c("80","90","100")])
     sigma <- cov(.x[,c("80","90","100")])
@@ -506,7 +506,7 @@ df_integrated %>%
       y = matrix(coords[2,], nrow=length(u)),
       z = matrix(coords[3,], nrow=length(u)),
       Stimulus = .y$Stimulus,
-      Alpha = .y$Alpha
+      Attention = .y$Attention
     )
   }) -> ellipsoids
 
@@ -514,7 +514,7 @@ p1 <- plot_ly()
 
 for (e in ellipsoids) {
   
-  col <- ifelse(e$Alpha == 25, "Reds", "Blues")
+  col <- ifelse(e$Attention == 25, "Reds", "Blues")
   
   p1 <- p1 %>% add_surface(
     x = e$x,
@@ -523,10 +523,10 @@ for (e in ellipsoids) {
     colorscale = col,
     showscale = FALSE,
     opacity = 0.6,
-    name = paste("Stim:", e$Stimulus, "Con:", e$Alpha),
+    name = paste("Stim:", e$Stimulus, "Con:", e$Attention),
     hoverinfo = "text",
     text = paste("Stimulus:", e$Stimulus,
-                 "<br>Alpha:", e$Alpha)
+                 "<br>Attention:", e$Attention)
   )
 }
 
@@ -543,7 +543,7 @@ p1
 # 3d scatter plot
 df_integrated %>% 
   filter(Neuron %in% c(80, 90, 100)) %>% 
-  pivot_wider(id_cols = c(Alpha, Stimulus, Trial), 
+  pivot_wider(id_cols = c(Attention, Stimulus, Trial), 
               names_from = Neuron, values_from = Spikes) -> df_scatter
 
 stim_list <- unique(df_scatter$Stimulus)
@@ -566,7 +566,7 @@ for (i in seq_along(stim_list)) {
       size = 3,
       symbol = symbols[i]
     ),
-    color = ~factor(Alpha),
+    color = ~factor(Attention),
     colors = colors,
     name = paste("Stimulus", stim_list[i])
   )
@@ -636,15 +636,15 @@ p3 <- p2 %>%
   )
 
 # visibility plane
-z2 <- outer(x_seq, y_seq, function(x, y) 230 - x - y)
+z2 <- outer(x_seq, y_seq, function(x, y) 250 - x - y)
 
 p4 <- p3 %>% add_surface(
   x = x_seq,
   y = y_seq,
   z = z2,
-  opacity = 0.3,
+  opacity = 0.5,
   showscale = FALSE,
-  name = "x+y+z=230 plane",
+  name = "x+y+z=250 plane",
   surfacecolor = matrix(rep(1, length(x_seq)*length(y_seq)),
                         nrow = length(x_seq),
                         ncol = length(y_seq)),
@@ -658,7 +658,7 @@ p4 <- p4 %>%
     title = list(font = list(size = 28)),
     margin = list(l = 0, r = 0, b = 0, t = 40),
     scene = list(
-      camera = list(eye = list(x = 3, y = -3, z = 2.2)),
+      camera = list(eye = list(x = 3, y = -4.1, z = 2.2)), # 3.7
       xaxis = list(titlefont = list(size = 16), tickfont = list(size = 12)),
       yaxis = list(titlefont = list(size = 16), tickfont = list(size = 12)),
       zaxis = list(titlefont = list(size = 16), tickfont = list(size = 12))
@@ -666,12 +666,12 @@ p4 <- p4 %>%
   )
 p4
 
-saveWidget(p4, "fig_3.html", selfcontained = TRUE)
-saveWidget(p4, "fig_3.png", selfcontained = TRUE)
+saveWidget(p4, "fig_4.html", selfcontained = TRUE)
+saveWidget(p4, "fig_4.png", selfcontained = TRUE)
 
 webshot2::webshot(
-  "fig_3.html",
-  "fig_3.png",
+  "fig_4.html",
+  "fig_4.png",
   vwidth  = 800,
   vheight = 560,
   zoom = 10

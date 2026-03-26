@@ -8,6 +8,8 @@ library(magick)
 library(webshot2)
 library(minpack.lm)
 
+set.seed(125)
+
 cl <- makeCluster(parallel::detectCores() - 1)
 registerDoParallel(cl)
 
@@ -60,7 +62,7 @@ orientations <- seq(1, 180, by = 1)
 preferred_orientations <-  seq(1, 180, length.out = n_neurons)
 max_firing_rate <- Rmax * 15^n / (15^n + C50^n) # 15% contrast
 tuning_width    <- 20                                         
-n_trials <- 1000
+n_trials <- 30
 
 tuning_curves <- matrix(0, nrow = n_neurons, ncol = length(orientations))
 for (i in 1:n_neurons) {
@@ -236,9 +238,9 @@ g5 <- df_integrated %>%
     color = "GV",
     fill = "GV") +
   theme(
-      legend.position = c(1.1, 1),
-      legend.justification = c(1, 1)
-    )
+    legend.position = c(1.1, 1),
+    legend.justification = c(1, 1)
+  )
 g5
 
 # Pairwise spike correlations
@@ -462,7 +464,7 @@ p4 <- p4 %>%
     title = list(font = list(size = 28)),
     margin = list(l = 0, r = 0, b = 0, t = 40),
     scene = list(
-      camera = list(eye = list(x = 3, y = -4.1, z = 2.2)), # 3.7
+      camera = list(eye = list(x = 3, y = -6.5, z = 2.2)),
       xaxis = list(titlefont = list(size = 16), tickfont = list(size = 12)),
       yaxis = list(titlefont = list(size = 16), tickfont = list(size = 12)),
       zaxis = list(titlefont = list(size = 16), tickfont = list(size = 12))
@@ -470,13 +472,13 @@ p4 <- p4 %>%
   )
 p4
 
-saveWidget(p4, "blindsight.html", selfcontained = TRUE)
-saveWidget(p4, "blindsight.png", selfcontained = TRUE)
+saveWidget(p4, "figure_5.html", selfcontained = TRUE)
+saveWidget(p4, "figure_5.png", selfcontained = TRUE)
 
 webshot2::webshot(
-  "blindsight.html",
-  "blindsight.png",
-  vwidth  = 800,
-  vheight = 560,
+  "figure_5.html",
+  "figure_5.png",
+  vwidth  = 800 * 1.5,
+  vheight = 560 * 1.5,
   zoom = 10
 )

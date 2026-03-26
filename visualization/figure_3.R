@@ -642,7 +642,7 @@ p4 <- p3 %>% add_surface(
   x = x_seq,
   y = y_seq,
   z = z2,
-  opacity = 0.3,
+  opacity = 0.5,
   showscale = FALSE,
   name = "x+y+z=230 plane",
   surfacecolor = matrix(rep(1, length(x_seq)*length(y_seq)),
