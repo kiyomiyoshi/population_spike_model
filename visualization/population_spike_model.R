@@ -9,6 +9,8 @@ library(webshot2)
 library(minpack.lm)
 library(ggpp)
 
+set.seed(111)
+
 cl <- makeCluster(parallel::detectCores() - 1)
 registerDoParallel(cl)
 
@@ -39,7 +41,7 @@ g1 <- ggplot(nr, aes(x = Contrast, y = Max_firing)) +
   scale_y_continuous(breaks = seq(0, 120, by = 30)) +
   labs(
     x = "Contrast (%)",
-    y = "Tuning curve peak"
+    y = "Peak response" # peak spike count
   ) +
   theme_classic(base_size = 11)
 g1
@@ -506,46 +508,31 @@ p2 <- p2 %>%
     )
   )
 
-p2
-
 # 3d scatter plot with logistic regression
-d <- df_scatter
-d$stim_bin <- as.numeric(as.factor(d$Stimulus)) - 1
-fit <- glm(stim_bin ~ `80` + `90` + `100`,
-           data = d,
-           family = binomial)
-b <- coef(fit)
-x_seq <- seq(0, 100, length.out = 300)
-y_seq <- seq(0, 100, length.out = 300)
-grid <- expand.grid(x = x_seq, y = y_seq)
-z <- -(b[1] + b[2]*grid$x + b[3]*grid$y) / b[4]
-z <- matrix(z, nrow = length(x_seq), ncol = length(y_seq))
+df_scatter$stim_bin <- as.numeric(as.factor(df_scatter$Stimulus)) - 1
+fit <- glm(stim_bin ~ `80` + `90` + `100`, data = df_scatter, family = binomial)
 
-planes <- list(
-  x = x_seq,
-  y = y_seq,
-  z = z
-)
+x_seq <- seq(0, 100, length.out = 50)
+y_seq <- seq(0, 100, length.out = 50)
+z_seq <- seq(0, 100, length.out = 50)
 
-p3 <- p2 %>% add_surface(
-  x = planes$x,
-  y = planes$y,
-  z = planes$z,
-  z[z < 0 | z > 100] <- NA,
-  opacity = 0.3,
-  showscale = FALSE,
-  name = "Decision plane",
-  surfacecolor = matrix(rep(0, length(planes$x)*length(planes$y)),
-                        nrow = length(planes$x),
-                        ncol = length(planes$y)),
-  colorscale = list(c(0, 1), c("gray70", "gray70"))
-)
+grid3d <- expand.grid(`80` = x_seq, `90` = y_seq, `100` = z_seq)
+grid3d$prob <- predict(fit, newdata = grid3d, type = "response")
+decision_points <- grid3d %>% filter(abs(prob - 0.5) < 0.02)
 
-p3
+p3 <- p2 %>%
+  add_trace(
+    data = decision_points,
+    x = ~`80`, y = ~`90`, z = ~`100`,
+    type = "mesh3d",
+    color = I("navy"),    # <- I() ensures literal color
+    opacity = 0.3,
+    name = "Decision boundary",
+    showscale = FALSE
+  )
 
 # visibility plane
 z2 <- outer(x_seq, y_seq, function(x, y) 150 - x - y)
-z2[z2 < 0 | z2 > 100] <- NA
 
 p4 <- p3 %>% add_surface(
   x = x_seq,
@@ -559,46 +546,7 @@ p4 <- p3 %>% add_surface(
                         ncol = length(y_seq)),
   colorscale = list(c(0, 1), c("pink", "pink"))
 )
-
 p4
-
-# Condition-specific logistic regression
-contrast_list <- "high"
-planes <- list()
-
-for (c in contrast_list) {
-  d <- df_scatter %>% 
-    filter(Contrast == c)
-  d$stim_bin <- as.numeric(as.factor(d$Stimulus)) - 1
-  fit <- glm(stim_bin ~ `80` + `90` + `100`,
-             data = d,
-             family = binomial)
-  b <- coef(fit)
-  x_seq <- seq(0, 100, length.out = 30)
-  y_seq <- seq(0, 100, length.out = 30)
-  grid <- expand.grid(x = x_seq, y = y_seq)
-  z <- -(b[1] + b[2]*grid$x + b[3]*grid$y) / b[4]
-  z <- matrix(z, nrow = length(x_seq), ncol = length(y_seq))
-  planes[[as.character(c)]] <- list(
-    x = x_seq,
-    y = y_seq,
-    z = z
-  )
-}
-
-for (c in contrast_list) {
-  p5 <- p2 %>% add_surface(
-    x = planes[[as.character(c)]]$x,
-    y = planes[[as.character(c)]]$y,
-    z = planes[[as.character(c)]]$z,
-    opacity = 0.3,
-    showscale = FALSE,
-    name = paste("Decision plane Contrast", c)
-  )
-}
-
-p5
-
 
 # save figures
 plot_list_1 <- list(g1, g9, g3, g2)
@@ -606,7 +554,7 @@ plots_1 <- lapply(plot_list_1, function(p) {
   p + theme(plot.margin = margin(t = 5, r = 5, b = 5, l = 5, unit = "pt"))
 })
 ps_1 <- wrap_plots(plots_1, ncol = 2)
-ggsave("ps_1.png", ps_1, width = 4, height = 3.3, dpi = 300)
+ggsave("ps_1.png", ps_1, width = 4, height = 3.2, dpi = 300)
 
 plot_list_2 <- list(g5, g4, g8)
 plots_2 <- lapply(plot_list_2, function(p) {
@@ -618,5 +566,26 @@ plots_2 <- lapply(plot_list_2, function(p) {
 ps_2 <- wrap_plots(plots_2, ncol = 3)
 ggsave("ps_2.png", ps_2, width = 6, height = 2, dpi = 300)
 
-htmlwidgets::saveWidget(p2, "scatter_3d.html")
-htmlwidgets::saveWidget(p4, "scatter_3d_logistic.html")
+p4 <- p4 %>%
+  layout(
+    font = list(size = 22),
+    title = list(font = list(size = 28)),
+    margin = list(l = 0, r = 0, b = 0, t = 40),
+    scene = list(
+      camera = list(eye = list(x = 3, y = -3, z = 1)),
+      xaxis = list(titlefont = list(size = 16), tickfont = list(size = 12)),
+      yaxis = list(titlefont = list(size = 16), tickfont = list(size = 12)),
+      zaxis = list(titlefont = list(size = 16), tickfont = list(size = 12))
+    )
+  )
+
+saveWidget(p4, "fig_2.html", selfcontained = TRUE)
+saveWidget(p4, "fig_2.png", selfcontained = TRUE)
+
+webshot2::webshot(
+  "fig_2.html",
+  "fig_2.png",
+  vwidth  = 800,
+  vheight = 560,
+  zoom = 10
+)

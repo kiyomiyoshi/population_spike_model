@@ -3,6 +3,8 @@ library(cowplot)
 library(patchwork)
 library(ggpp)
 
+set.seed(123)
+
 color_wheel <- function(alpha = 1) {
   h <- c(seq(160, 0, -1), seq(180, 161, -1))[-161]
   h <- h / 180
@@ -65,7 +67,7 @@ p2 <- ggplot(df_responses) + geom_col(aes(x = Neuron, y = Spikes), color = "grey
            npcy = 1,
            label = "Baseline excitability", 
            size = 3.5) +
-  ylim(0, 160) + ylab("Spikes")
+  ylim(0, 165) + ylab("Spikes")
 
 p3 <- ggplot(df_responses_augmented) + geom_col(aes(x = Neuron, y = Spikes), color = "grey34") +
   theme_classic(base_size = 12) + 
@@ -74,7 +76,7 @@ p3 <- ggplot(df_responses_augmented) + geom_col(aes(x = Neuron, y = Spikes), col
            npcy = 1,
            label = "Elevated excitability", 
            size = 3.5) +
-  ylim(0, 160) + ylab("Spikes")
+  ylim(0, 165) + ylab("Spikes")
 
 # Likelihood
 likelihood <- numeric(length(orientations))
@@ -115,7 +117,7 @@ cat("The maximum a posteriori (MAP) orientation is", map_orientation_augmented, 
 
 p4 <- ggplot(df_posterior, aes(x = Orientation, y = Density)) +
   geom_line() +
-  labs(x = "Orientation", y = "Posterior density") +
+  labs(x = "Orientation", y = "Density") +
   annotate("text_npc",
            npcx = 0.5,
            npcy = 1,
@@ -124,13 +126,13 @@ p4 <- ggplot(df_posterior, aes(x = Orientation, y = Density)) +
   theme_classic(base_size = 12) + 
   coord_cartesian(xlim = c(85, 95)) +
   scale_x_continuous(breaks = c(85, 90, 95)) + 
-  scale_y_continuous(limits = c(0, 1.1), breaks = c(0, 0.5, 1))
+  scale_y_continuous(limits = c(0, 1.13), breaks = c(0, 0.5, 1))
   
 
 p5 <- ggplot(df_posterior_augmented, aes(x = Orientation, y = Density)) +
   geom_line() +
   theme_classic(base_size = 12) + 
-  labs(x = "Orientation", y = "Posterior density") +
+  labs(x = "Orientation", y = "Density") +
   annotate("text_npc",
            npcx = 0.5,
            npcy = 1,
@@ -138,7 +140,7 @@ p5 <- ggplot(df_posterior_augmented, aes(x = Orientation, y = Density)) +
            size = 3.5) +
   coord_cartesian(xlim = c(85, 95)) +
   scale_x_continuous(breaks = c(85, 90, 95)) + 
-  scale_y_continuous(limits = c(0, 1.1), breaks = c(0, 0.5, 1))
+  scale_y_continuous(limits = c(0, 1.13), breaks = c(0, 0.5, 1))
 
 g1 <- list(p1, p2, p4, p3, p5)
 g1 <- lapply(g1, function(p) {
@@ -149,4 +151,4 @@ g1 <- lapply(g1, function(p) {
 })
 
 ppc <- wrap_plots(g1, nrow = 1)
-ggsave("ppc.png", ppc, width = 10, height = 2, dpi = 300)
+ggsave("ppc.png", ppc, width = 10, height = 1.5, dpi = 300)
