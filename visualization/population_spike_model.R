@@ -546,7 +546,6 @@ p4 <- p3 %>% add_surface(
                         ncol = length(y_seq)),
   colorscale = list(c(0, 1), c("pink", "pink"))
 )
-p4
 
 # save figures
 plot_list_1 <- list(g1, g9, g3, g2)
@@ -578,6 +577,7 @@ p4 <- p4 %>%
       zaxis = list(titlefont = list(size = 16), tickfont = list(size = 12))
     )
   )
+p4
 
 saveWidget(p4, "fig_2.html", selfcontained = TRUE)
 saveWidget(p4, "fig_2.png", selfcontained = TRUE)

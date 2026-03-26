@@ -10,6 +10,8 @@ library(webshot2)
 library(minpack.lm)
 library(ggpp)
 
+set.seed(126)
+
 #################### High Alpha ####################
 Contrast <- 25
 Rmax <- 115
@@ -30,7 +32,7 @@ preferred_orientations <- seq(1, 180, length.out = n_neurons) # Preferred orient
 max_firing_seq <- df$Max_firing                               # Maximum firing rate of each neuron
 contrast <- df$Contrast
 tuning_width <- 20                                            # Tuning width (standard deviation) of each neuron's response curve
-n_trials <- 30
+n_trials <- 20
 
 all_results <- list()
 
@@ -255,7 +257,7 @@ preferred_orientations <- seq(1, 180, length.out = n_neurons) # Preferred orient
 max_firing_seq <- df$Max_firing                               # Maximum firing rate of each neuron
 contrast <- df$Contrast
 tuning_width <- 20                                            # Tuning width (standard deviation) of each neuron's response curve
-n_trials <- 30
+n_trials <- 20
 
 all_results <- list()
 
@@ -609,7 +611,6 @@ p2 <- p2 %>%
       )
     )
   )
-p2
 
 # discrimination plane
 df_scatter$stim_bin <- as.numeric(as.factor(df_scatter$Stimulus)) - 1
@@ -633,7 +634,6 @@ p3 <- p2 %>%
     name = "Decision boundary",
     showscale = FALSE
   )
-p3
 
 # visibility plane
 z2 <- outer(x_seq, y_seq, function(x, y) 230 - x - y)
@@ -650,7 +650,6 @@ p4 <- p3 %>% add_surface(
                         ncol = length(y_seq)),
   colorscale = list(c(0, 1), c("pink", "pink"))
 )
-p4
 
 # save 3d figure
 p4 <- p4 %>%
@@ -665,13 +664,14 @@ p4 <- p4 %>%
       zaxis = list(titlefont = list(size = 16), tickfont = list(size = 12))
     )
   )
+p4
 
-saveWidget(p4, "p4.html", selfcontained = TRUE)
-saveWidget(p4, "p4.png", selfcontained = TRUE)
+saveWidget(p4, "fig_3.html", selfcontained = TRUE)
+saveWidget(p4, "fig_3.png", selfcontained = TRUE)
 
 webshot2::webshot(
-  "p4.html",
-  "p4.png",
+  "fig_3.html",
+  "fig_3.png",
   vwidth  = 800,
   vheight = 560,
   zoom = 10
