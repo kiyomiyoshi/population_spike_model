@@ -32,7 +32,7 @@ preferred_orientations <- seq(1, 180, length.out = n_neurons) # Preferred orient
 max_firing_seq <- df$Max_firing                               # Maximum firing rate of each neuron
 contrast <- df$Contrast
 tuning_width <- 20                                            # Tuning width (standard deviation) of each neuron's response curve
-n_trials <- 30
+n_trials <- 25
 
 all_results <- list()
 
@@ -257,7 +257,7 @@ preferred_orientations <- seq(1, 180, length.out = n_neurons) # Preferred orient
 max_firing_seq <- df$Max_firing                               # Maximum firing rate of each neuron
 contrast <- df$Contrast
 tuning_width <- 20                                            # Tuning width (standard deviation) of each neuron's response curve
-n_trials <- 30
+n_trials <- 25
 
 all_results <- list()
 
@@ -489,13 +489,13 @@ z_sphere <- outer(rep(1,length(u)), cos(v))
 unit_sphere <- rbind(as.vector(x_sphere), as.vector(y_sphere), as.vector(z_sphere))
 
 df_integrated %>% 
-  filter(Neuron %in% c(80, 90, 100)) %>% 
+  filter(Neuron %in% c(90, 95, 100)) %>% 
   pivot_wider(id_cols = c(Attention, Stimulus, Trial), 
               names_from = Neuron, values_from = Spikes) %>%
   group_by(Stimulus, Attention) %>% 
   group_map(~{
-    mu <- colMeans(.x[,c("80","90","100")])
-    sigma <- cov(.x[,c("80","90","100")])
+    mu <- colMeans(.x[,c("90","95","100")])
+    sigma <- cov(.x[,c("90","95","100")])
     if(det(sigma) <= 0){
       sigma <- sigma + diag(1e-6,3)
     }
@@ -533,8 +533,8 @@ for (e in ellipsoids) {
 p1 <- p1 %>%
   layout(
     scene = list(
-      xaxis = list(title = "Neuron 80", range =  c(40, 120)),
-      yaxis = list(title = "Neuron 90", range =  c(40, 120)),
+      xaxis = list(title = "Neuron 90", range =  c(40, 120)),
+      yaxis = list(title = "Neuron 95", range =  c(40, 120)),
       zaxis = list(title = "Neuron 100", range = c(40, 120))
     )
   )
@@ -542,7 +542,7 @@ p1
 
 # 3d scatter plot
 df_integrated %>% 
-  filter(Neuron %in% c(80, 90, 100)) %>% 
+  filter(Neuron %in% c(90, 95, 100)) %>% 
   pivot_wider(id_cols = c(Attention, Stimulus, Trial), 
               names_from = Neuron, values_from = Spikes) -> df_scatter
 
@@ -557,8 +557,8 @@ for (i in seq_along(stim_list)) {
   d <- df_scatter %>% filter(Stimulus == stim_list[i])
   p2 <- p2 %>% add_trace(
     data = d,
-    x = ~`80`,
-    y = ~`90`,
+    x = ~`90`,
+    y = ~`95`,
     z = ~`100`,
     type = "scatter3d",
     mode = "markers",
@@ -575,8 +575,8 @@ for (i in seq_along(stim_list)) {
 p2 <- p2 %>%
   layout(
     scene = list(
-      xaxis = list(title = "Neuron 80",  range = c(40, 120)),
-      yaxis = list(title = "Neuron 90",  range = c(40, 120)),
+      xaxis = list(title = "Neuron 90",  range = c(40, 120)),
+      yaxis = list(title = "Neuron 95",  range = c(40, 120)),
       zaxis = list(title = "Neuron 100", range = c(40, 120)),
       aspectmode = "cube"   
     )
@@ -586,7 +586,7 @@ p2 <- p2 %>%
   layout(
     scene = list(
       xaxis = list(
-        title = "Neuron 80",
+        title = "Neuron 90",
         range = c(40, 120),
         tickvals = seq(40, 120, by = 20),
         color = "black", 
@@ -594,7 +594,7 @@ p2 <- p2 %>%
         titlefont = list(color = "black")
       ),
       yaxis = list(
-        title = "Neuron 90",
+        title = "Neuron 95",
         range = c(40, 120),
         tickvals = seq(40, 120, by = 20),
         color = "black",
@@ -614,20 +614,20 @@ p2 <- p2 %>%
 
 # discrimination plane
 df_scatter$stim_bin <- as.numeric(as.factor(df_scatter$Stimulus)) - 1
-fit <- glm(stim_bin ~ `80` + `90` + `100`, data = df_scatter, family = binomial)
+fit <- glm(stim_bin ~ `90` + `95` + `100`, data = df_scatter, family = binomial)
 
-x_seq <- seq(40, 120, length.out = 50)
-y_seq <- seq(40, 120, length.out = 50)
-z_seq <- seq(40, 120, length.out = 50)
+x_seq <- seq(20, 150, length.out = 300)
+y_seq <- seq(20, 150, length.out = 300)
+z_seq <- seq(20, 150, length.out = 300)
 
-grid3d <- expand.grid(`80` = x_seq, `90` = y_seq, `100` = z_seq)
+grid3d <- expand.grid(`90` = x_seq, `95` = y_seq, `100` = z_seq)
 grid3d$prob <- predict(fit, newdata = grid3d, type = "response")
 decision_points <- grid3d %>% filter(abs(prob - 0.5) < 0.02)
 
 p3 <- p2 %>%
   add_trace(
     data = decision_points,
-    x = ~`80`, y = ~`90`, z = ~`100`,
+    x = ~`90`, y = ~`95`, z = ~`100`,
     type = "mesh3d",
     color = I("navy"),    # <- I() ensures literal color
     opacity = 0.3,

@@ -60,7 +60,7 @@ colors <- color_wheel()
 n_neurons <- 180                                              
 orientations <- seq(1, 180, by = 1)                           
 preferred_orientations <-  seq(1, 180, length.out = n_neurons)
-max_firing_rate <- Rmax * 15^n / (15^n + C50^n) # 15% contrast
+max_firing_rate <- Rmax * 18^n / (18^n + C50^n) # 15% contrast
 tuning_width    <- 20                                         
 n_trials <- 30
 
@@ -136,7 +136,7 @@ colnames(df_responses_1) <- c("Spikes", "Neuron", "Stimulus", "Trial")
 n_neurons <- 180                                               
 orientations <- seq(1, 180, by = 1)                            
 preferred_orientations <-  seq(1, 180, length.out = n_neurons) 
-max_firing_rate <- Rmax * 15^n / (15^n + C50^n)                                 
+max_firing_rate <- Rmax * 18^n / (18^n + C50^n)                                 
 tuning_width <-    20                                  
 
 tuning_curves <- matrix(0, nrow = n_neurons, ncol = length(orientations))
@@ -295,13 +295,13 @@ z_sphere <- outer(rep(1,length(u)), cos(v))
 unit_sphere <- rbind(as.vector(x_sphere), as.vector(y_sphere), as.vector(z_sphere))
 
 df_integrated %>% 
-  filter(Neuron %in% c(80, 90, 100)) %>% 
+  filter(Neuron %in% c(90, 95, 100)) %>% 
   pivot_wider(id_cols = c(GV, Stimulus, Trial), 
               names_from = Neuron, values_from = Spikes) %>%
   group_by(Stimulus, GV) %>% 
   group_map(~{
-    mu <- colMeans(.x[,c("80","90","100")])
-    sigma <- cov(.x[,c("80","90","100")])
+    mu <- colMeans(.x[,c("90","95","100")])
+    sigma <- cov(.x[,c("90","95","100")])
     if(det(sigma) <= 0){
       sigma <- sigma + diag(1e-6,3)
     }
@@ -339,8 +339,8 @@ for (e in ellipsoids) {
 p1 <- p1 %>%
   layout(
     scene = list(
-      xaxis = list(title = "Neuron 80", range =  c(0, 100)),
-      yaxis = list(title = "Neuron 90", range =  c(0, 100)),
+      xaxis = list(title = "Neuron 90", range =  c(0, 100)),
+      yaxis = list(title = "Neuron 95", range =  c(0, 100)),
       zaxis = list(title = "Neuron 100", range = c(0, 100))
     )
   )
@@ -348,7 +348,7 @@ p1
 
 # 3d scatter plot
 df_integrated %>% 
-  filter(Neuron %in% c(80, 90, 100)) %>% 
+  filter(Neuron %in% c(90, 95, 100)) %>% 
   pivot_wider(id_cols = c(GV, Stimulus, Trial), 
               names_from = Neuron, values_from = Spikes) -> df_scatter
 
@@ -363,8 +363,8 @@ for (i in seq_along(stim_list)) {
   d <- df_scatter %>% filter(Stimulus == stim_list[i])
   p2 <- p2 %>% add_trace(
     data = d,
-    x = ~`80`,
-    y = ~`90`,
+    x = ~`90`,
+    y = ~`95`,
     z = ~`100`,
     type = "scatter3d",
     mode = "markers",
@@ -381,8 +381,8 @@ for (i in seq_along(stim_list)) {
 p2 <- p2 %>%
   layout(
     scene = list(
-      xaxis = list(title = "Neuron 80",  range = c(0, 100)),
-      yaxis = list(title = "Neuron 90",  range = c(0, 100)),
+      xaxis = list(title = "Neuron 90",  range = c(0, 100)),
+      yaxis = list(title = "Neuron 95",  range = c(0, 100)),
       zaxis = list(title = "Neuron 100", range = c(0, 100)),
       aspectmode = "cube"   
     )
@@ -392,7 +392,7 @@ p2 <- p2 %>%
   layout(
     scene = list(
       xaxis = list(
-        title = "Neuron 80",
+        title = "Neuron 90",
         range = c(0, 100),
         tickvals = seq(0, 100, by = 20),
         color = "black", 
@@ -400,7 +400,7 @@ p2 <- p2 %>%
         titlefont = list(color = "black")
       ),
       yaxis = list(
-        title = "Neuron 90",
+        title = "Neuron 95",
         range = c(0, 100),
         tickvals = seq(0, 100, by = 20),
         color = "black",
@@ -420,20 +420,20 @@ p2 <- p2 %>%
 
 # discrimination plane
 df_scatter$stim_bin <- as.numeric(as.factor(df_scatter$Stimulus)) - 1
-fit <- glm(stim_bin ~ `80` + `90` + `100`, data = df_scatter, family = binomial)
+fit <- glm(stim_bin ~ `90` + `95` + `100`, data = df_scatter, family = binomial)
 
 x_seq <- seq(0, 100, length.out = 50)
 y_seq <- seq(0, 100, length.out = 50)
 z_seq <- seq(0, 100, length.out = 50)
 
-grid3d <- expand.grid(`80` = x_seq, `90` = y_seq, `100` = z_seq)
+grid3d <- expand.grid(`90` = x_seq, `95` = y_seq, `100` = z_seq)
 grid3d$prob <- predict(fit, newdata = grid3d, type = "response")
 decision_points <- grid3d %>% filter(abs(prob - 0.5) < 0.02)
 
 p3 <- p2 %>%
   add_trace(
     data = decision_points,
-    x = ~`80`, y = ~`90`, z = ~`100`,
+    x = ~`90`, y = ~`95`, z = ~`100`,
     type = "mesh3d",
     color = I("navy"),    # <- I() ensures literal color
     opacity = 0.3,
@@ -442,7 +442,7 @@ p3 <- p2 %>%
   )
 
 # visibility plane
-z2 <- outer(x_seq, y_seq, function(x, y) 100 - x - y)
+z2 <- outer(x_seq, y_seq, function(x, y) 150 - x - y)
 
 p4 <- p3 %>% add_surface(
   x = x_seq,
@@ -450,7 +450,7 @@ p4 <- p3 %>% add_surface(
   z = z2,
   opacity = 0.5,
   showscale = FALSE,
-  name = "x+y+z=250 plane",
+  name = "x+y+z=150 plane",
   surfacecolor = matrix(rep(1, length(x_seq)*length(y_seq)),
                         nrow = length(x_seq),
                         ncol = length(y_seq)),
@@ -464,7 +464,7 @@ p4 <- p4 %>%
     title = list(font = list(size = 28)),
     margin = list(l = 0, r = 0, b = 0, t = 40),
     scene = list(
-      camera = list(eye = list(x = 3, y = -6.5, z = 2.2)),
+      camera = list(eye = list(x = 1, y = -4, z = 2.5)),
       xaxis = list(titlefont = list(size = 16), tickfont = list(size = 12)),
       yaxis = list(titlefont = list(size = 16), tickfont = list(size = 12)),
       zaxis = list(titlefont = list(size = 16), tickfont = list(size = 12))
@@ -478,7 +478,7 @@ saveWidget(p4, "figure_5.png", selfcontained = TRUE)
 webshot2::webshot(
   "figure_5.html",
   "figure_5.png",
-  vwidth  = 800 * 1.5,
-  vheight = 560 * 1.5,
+  vwidth  = 800 * 1.1,
+  vheight = 560 * 1.1,
   zoom = 10
 )
