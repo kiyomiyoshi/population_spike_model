@@ -672,7 +672,7 @@ saveWidget(p4, "fig_4.png", selfcontained = TRUE)
 webshot2::webshot(
   "fig_4.html",
   "fig_4.png",
-  vwidth  = 800,
-  vheight = 560,
+  vwidth  = 800 * 1.2,
+  vheight = 560 * 1.2,
   zoom = 10
 )

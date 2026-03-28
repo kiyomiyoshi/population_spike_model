@@ -1,7 +1,6 @@
 library(ggplot2)
 library(patchwork)
 
-###
 make_gabor <- function(size = 256, sigma = 30, freq = 0.03,
                        phase = 0, theta = 0, contrast = 1){
   
@@ -19,7 +18,6 @@ make_gabor <- function(size = 256, sigma = 30, freq = 0.03,
   return(grid)
 }
 
-###
 p1 <- ggplot(make_gabor(theta = pi/4, contrast = 0.1), aes(x, y, fill = gabor)) +
   geom_raster() +
   scale_fill_gradient2(low = "black", mid = "gray", high = "white", limits = c(-1, 1)) +
@@ -45,7 +43,6 @@ g1 <- lapply(g1, function(p) {
 gabor_1 <- wrap_plots(g1, nrow = 1)
 ggsave("gabor_1.png", gabor_1, width = 4, height = 2, dpi = 300, bg = "white")
 
-###
 p3 <- ggplot(make_gabor(theta = 0, contrast = 0.1), aes(x, y, fill = gabor)) +
   geom_raster() +
   scale_fill_gradient2(low = "black", mid = "gray", high = "white", limits = c(-1, 1)) +

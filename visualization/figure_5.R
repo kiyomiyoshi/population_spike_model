@@ -422,9 +422,9 @@ p2 <- p2 %>%
 df_scatter$stim_bin <- as.numeric(as.factor(df_scatter$Stimulus)) - 1
 fit <- glm(stim_bin ~ `90` + `95` + `100`, data = df_scatter, family = binomial)
 
-x_seq <- seq(0, 100, length.out = 50)
-y_seq <- seq(0, 100, length.out = 50)
-z_seq <- seq(0, 100, length.out = 50)
+x_seq <- seq(0, 100, length.out = 30)
+y_seq <- seq(0, 100, length.out = 30)
+z_seq <- seq(0, 100, length.out = 30)
 
 grid3d <- expand.grid(`90` = x_seq, `95` = y_seq, `100` = z_seq)
 grid3d$prob <- predict(fit, newdata = grid3d, type = "response")
@@ -464,21 +464,21 @@ p4 <- p4 %>%
     title = list(font = list(size = 28)),
     margin = list(l = 0, r = 0, b = 0, t = 40),
     scene = list(
-      camera = list(eye = list(x = 1, y = -4, z = 2.5)),
-      xaxis = list(titlefont = list(size = 16), tickfont = list(size = 12)),
-      yaxis = list(titlefont = list(size = 16), tickfont = list(size = 12)),
-      zaxis = list(titlefont = list(size = 16), tickfont = list(size = 12))
+      camera = list(eye = list(x = 1, y = -2.2, z = 1)),
+      xaxis = list(titlefont = list(size = 16 * 1.3), tickfont = list(size = 12 * 1.12)),
+      yaxis = list(titlefont = list(size = 16 * 1.3), tickfont = list(size = 12 * 1.12)),
+      zaxis = list(titlefont = list(size = 16 * 1.3), tickfont = list(size = 12 * 1.12))
     )
   )
 p4
 
-saveWidget(p4, "figure_5.html", selfcontained = TRUE)
-saveWidget(p4, "figure_5.png", selfcontained = TRUE)
+saveWidget(p4, "fig_5.html", selfcontained = TRUE)
+saveWidget(p4, "fig_5.png", selfcontained = TRUE)
 
 webshot2::webshot(
-  "figure_5.html",
-  "figure_5.png",
-  vwidth  = 800 * 1.1,
-  vheight = 560 * 1.1,
+  "fig_5.html",
+  "fig_5.png",
+  vwidth  = 800 * 0.8,
+  vheight = 560 * 0.8,
   zoom = 10
 )
