@@ -94,29 +94,54 @@ compute_lfi_decomposition <- function(data, lambda = 1e-6) {
   data0 <- data[data$Target == 0, neurons]
   data1 <- data[data$Target == 1, neurons]
   
-  df <- colMeans(data1) - colMeans(data0)
+  mu0 <- colMeans(data0)
+  mu1 <- colMeans(data1)
+  
+  df <- mu1 - mu0
   
   Sigma <- (cov(data0) + cov(data1)) / 2
   Sigma <- Sigma + lambda * diag(p)
   
-  # 1. 最適なデコーディング重み w = Sigma^-1 * df
+  # Fisher decoder
   w <- solve(Sigma) %*% df
   
-  # 2. 各ニューロンの貢献度
   contribution <- as.numeric(df * w)
   
-  # 3. 独立仮定時の情報量
+  # ------------------
+  # Trial-wise prediction
+  # ------------------
+  
+  X <- as.matrix(data[, neurons])
+  
+  # 判別スコア
+  score <- as.numeric(X %*% w)
+  
+  # クラス平均の中点を閾値にする
+  threshold <- as.numeric(((mu0 + mu1) / 2) %*% w)
+  
+  predicted <- ifelse(score > threshold, 1, 0)
+  
+  prediction_df <- data.frame(
+    Trial = data$Trial,
+    Target = data$Target,
+    Score = score,
+    Predicted = predicted,
+    Correct = predicted == data$Target
+  )
+  
+  # 独立仮定
   Sigma_diag <- diag(diag(Sigma))
   w_shuffled <- solve(Sigma_diag) %*% df
   I_shuffled <- as.numeric(t(df) %*% w_shuffled)
   
-  return(list(
+  list(
     total_I = sum(contribution),
     neuron_contributions = contribution,
     shuffled_I = I_shuffled,
     correlation_gain = sum(contribution) / I_shuffled,
-    lfi_weights = w
-    ))
+    lfi_weights = w,
+    predictions = prediction_df
+  )
 }
 
 df_wide <- df_responses %>%
