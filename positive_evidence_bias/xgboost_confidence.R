@@ -59,7 +59,6 @@ df_conf$Confidence <- predict(model_xgb, dtrain)
 # 元のデータに「Confidence」列が追加されているか確認
 head(df_conf[, c("Trial", "Correct", "Confidence")])
 
-
 g <- df_conf %>%
   ggplot(aes(x = `45`, y = `135`, z = Confidence)) +
   stat_summary_2d(
@@ -67,7 +66,7 @@ g <- df_conf %>%
     bins = 15
   ) +
   scale_fill_viridis_c(
-    limits = c(0.5, 1)
+    limits = c(0.85, 0.95)
   ) +
   coord_equal() +
   labs(
@@ -77,3 +76,11 @@ g <- df_conf %>%
   ) +
   theme_minimal()
 g
+
+ggsave(
+  filename = "confidence_plot_peb_test.png",
+  plot = g,
+  width = 6,
+  height = 5,
+  dpi = 300
+)

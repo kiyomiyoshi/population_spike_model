@@ -27,7 +27,7 @@ n_neurons <- 180
 orientations <- c(45, 135)
 preferred_orientations <- seq(1, 180, length.out = n_neurons)
 tuning_width <- 20
-n_trials <- 250000
+n_trials <- 50000
 
 # stimulus 
 contrasts <- 3
