@@ -27,11 +27,11 @@ R0 <- Rmax * 0.03
 n_neurons <- 180
 orientations <- c(45, 135)
 preferred_orientations <- seq(1, 180, length.out = n_neurons)
-tuning_width <- 20
-n_trials <- 30000
+tuning_width <- 40
+n_trials <- 10000
 
 # stimulus 
-contrasts <- seq(1, 10, 1)
+contrasts <- seq(0, 10, 1)
 stim_angles <- c(45, 135)
 
 results_list <- list()
